@@ -1,8 +1,68 @@
 /* eslint-disable no-template-curly-in-string */
 
+const path = require('path')
+const fs = require('fs')
+const { spawnSync } = require('child_process')
 const builder = require('electron-builder')
 const beforePack = require('./build-before-pack')
 const afterPack = require('./build-after-pack')
+
+// 定位 Windows SDK 自带的 signtool（electron-builder 内置的 2019 版 winCodeSign signtool
+// 在 Windows 11 上对 AppX 签名会报 "A required function is not present"）。
+function findRealSignTool() {
+  if (process.env.REAL_SIGNTOOL && fs.existsSync(process.env.REAL_SIGNTOOL)) {
+    return process.env.REAL_SIGNTOOL
+  }
+  // 标准 Windows 10/11 SDK 安装路径
+  const kits = 'C:/Program Files (x86)/Windows Kits/10/bin'
+  if (fs.existsSync(kits)) {
+    const dirs = fs
+      .readdirSync(kits)
+      .filter((d) => /^10\./.test(d))
+      .sort()
+      .reverse()
+    for (const d of dirs) {
+      const p = path.join(kits, d, 'x64', 'signtool.exe')
+      if (fs.existsSync(p)) return p
+    }
+  }
+  // NuGet microsoft.windows.sdk.buildtools（部分沙箱/CI 环境）
+  const nuget = 'C:/Users/lwk/.nuget/packages/microsoft.windows.sdk.buildtools'
+  if (fs.existsSync(nuget)) {
+    const vers = fs.readdirSync(nuget).sort().reverse()
+    for (const v of vers) {
+      const p = path.join(nuget, v, 'bin', '10.0.28000.0', 'x64', 'signtool.exe')
+      if (fs.existsSync(p)) return p
+    }
+  }
+  return null
+}
+
+// 自定义签名函数：接管 electron-builder 默认的 AppX/EXE 签名。
+// 使用 Windows SDK 自带的 signtool；在 ELECTRON_BUILDER_OFFLINE=true 或 LX_STRIP_TS=1 时，
+// computeSignToolArgs 已不含时间戳参数（沙箱/离线环境无法访问时间戳服务器时必需）。
+function customCodeSign(configuration, packager) {
+  const real = findRealSignTool()
+  if (!real) {
+    throw new Error(
+      '[customCodeSign] 未找到 Windows SDK 的 signtool.exe，请安装 Windows 10/11 SDK，或通过 REAL_SIGNTOOL 环境变量指定'
+    )
+  }
+  const isWin = process.platform === 'win32'
+  let args = configuration.computeSignToolArgs(isWin)
+  // 防御性剥离时间戳参数（部分 electron-builder 版本在离线判断上有差异）
+  if (process.env.ELECTRON_BUILDER_OFFLINE === 'true' || process.env.LX_STRIP_TS) {
+    args = args.filter((a, i) => {
+      if (a === '/tr' || a === '/td' || a === '/t') return false
+      if (i > 0 && (args[i - 1] === '/tr' || args[i - 1] === '/td' || args[i - 1] === '/t')) return false
+      return true
+    })
+  }
+  const r = spawnSync(real, args, { stdio: 'inherit', windowsHide: true })
+  if (r.status !== 0) {
+    throw new Error(`[customCodeSign] signtool 退出码 ${r.status}`)
+  }
+}
 
 /**
 * @type {import('electron-builder').Configuration}
@@ -64,8 +124,14 @@ const winOptions = {
     icon: './resources/icons/icon.ico',
     legalTrademarks: 'lwk0',
     // 代码签名证书（同时用于 NSIS 安装包与 APPX 包签名），密码 123456，可用环境变量覆盖
-    certificateFile: process.env.MSIX_CERT_FILE || './cer/lwk-sign.pfx',
-    certificatePassword: process.env.MSIX_CERT_PASSWORD || '123456',
+    signtoolOptions: {
+      certificateFile: process.env.MSIX_CERT_FILE || './cer/lwk-sign.pfx',
+      certificatePassword: process.env.MSIX_CERT_PASSWORD || '123456',
+      // 自定义签名函数：使用 Windows SDK 自带的 signtool（内置 2019 版在 Win11 上签 AppX 会报
+      // "A required function is not present"）。构建时请设置 ELECTRON_BUILDER_OFFLINE=true 以跳过
+      // 时间戳服务器（自签名证书离线/沙箱环境无需时间戳；联网机器可去掉该变量以保留时间戳）。
+      sign: customCodeSign,
+    },
     // artifactName: '${productName}-v${version}-${env.ARCH}-${env.TARGET}.${ext}',
   },
   // APPX / MSIX 打包
@@ -73,8 +139,12 @@ const winOptions = {
   // 其产出的 .appx 容器在封装格式上与 MSIX 一致（可改名 .msix 或配合 Windows 10 SDK 的 MakeAppx 进一步处理）。
   // 需要本机安装 Windows 10 SDK（MakeAppx.exe / SignTool.exe 在 PATH 中）。
   appx: {
-    // publisher 不填：electron-builder 会自动从签名证书的 Subject 派生，保证与证书完全一致
+    // publisher 必须与签名证书 Subject 严格一致（MakeAppx 校验 + SignTool 签名都依赖它）。
+    // 证书 Subject 为 C=CN, O=lwk, CN=lwk，必须按此顺序书写，否则 MakeAppx 报 DN 格式错误。
+    publisher: 'C=CN, O=lwk, CN=lwk',
     identityName: 'lx-netease-music-desktop',
+    // applicationId 必须是点分、字母开头、不含连字符（与 identityName 的连字符不兼容），故显式指定
+    applicationId: 'lx.netease.music.desktop',
     displayName: 'LX-N Music',
     publisherDisplayName: 'lwk0',
   },
