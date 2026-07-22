@@ -6,6 +6,9 @@ export const toNewMusicInfo = (oldMusicInfo: any): LX.Music.MusicInfo => {
     albumName: oldMusicInfo.albumName, // 歌曲专辑名称
     picUrl: oldMusicInfo.img, // 歌曲图片链接
   }
+  if (oldMusicInfo.source != 'local' && oldMusicInfo.artists) {
+    meta.artists = oldMusicInfo.artists
+  }
   const newInfo = {
     id: `${oldMusicInfo.source}_${oldMusicInfo.songmid}`,
     name: oldMusicInfo.name,

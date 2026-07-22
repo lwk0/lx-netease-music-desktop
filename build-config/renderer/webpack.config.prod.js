@@ -58,6 +58,7 @@ module.exports = merge(baseConfig, {
       __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
       COMMIT_ID: `"${gitInfo.commit_id}"`,
       COMMIT_DATE: `"${gitInfo.commit_date}"`,
+      staticPath: `"${path.join(__dirname, '../../dist/static').replace(/\\/g, '\\\\')}"`,
     }),
   ],
   optimization: {

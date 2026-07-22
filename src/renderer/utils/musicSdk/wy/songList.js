@@ -9,6 +9,7 @@ import { formatPlayTime, sizeFormate, dateFormat, formatPlayCount } from '../../
 import musicDetailApi from './musicDetail'
 import { eapiRequest } from './utils/index'
 import { formatSingerName } from '../utils'
+import { appSetting } from '@renderer/store/setting'
 
 export default {
   _requestObj_tags: null,
@@ -70,12 +71,15 @@ export default {
 
     const { id, cookie } = await this.getListId(rawId)
     if (cookie) this.cookie = cookie
+    // Use logged-in user's cookie if available (for private playlists)
+    const userCookie = appSetting['common.wy_cookie']
+    const effectiveCookie = userCookie || this.cookie
 
     const requestObj_listDetail = httpFetch('https://music.163.com/api/linux/forward', {
       method: 'post',
       headers: {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
-        Cookie: this.cookie,
+        Cookie: effectiveCookie,
       },
       form: linuxapi({
         method: 'POST',
@@ -171,6 +175,7 @@ export default {
           name: item.pc.sn ?? '',
           albumName: item.pc.alb ?? '',
           albumId: item.al?.id,
+          artists: item.ar,
           source: 'wy',
           interval: formatPlayTime(item.dt / 1000),
           songmid: item.id,
@@ -187,6 +192,7 @@ export default {
           name: item.name ?? '',
           albumName: item.al?.name,
           albumId: item.al?.id,
+          artists: item.ar,
           source: 'wy',
           interval: formatPlayTime(item.dt / 1000),
           songmid: item.id,

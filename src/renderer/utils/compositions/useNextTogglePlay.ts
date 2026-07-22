@@ -20,6 +20,7 @@ export default () => {
       case 'random': return t('player__play_toggle_mode_random')
       case 'singleLoop': return t('player__play_toggle_mode_single_loop')
       case 'list': return t('player__play_toggle_mode_list')
+      case 'heartbeat': return t('player__play_toggle_mode_heartbeat')
       default: return t('player__play_toggle_mode_off')
     }
   })

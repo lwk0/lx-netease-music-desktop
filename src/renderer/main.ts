@@ -22,6 +22,7 @@ import { langList } from '@root/lang'
 import type { I18n } from '@root/lang/i18n'
 
 import { initSetting } from './store/setting'
+import { initWyUser } from './store/user/action'
 // import { bubbleCursor } from './utils/cursor-effects/bubbleCursor'
 
 import './worker'
@@ -68,6 +69,9 @@ void getSetting().then(setting => {
 
   // store.commit('setSetting', setting)
   initSetting(setting)
+
+  // 自动初始化网易云登录状态（异步，不阻塞应用启动）
+  void initWyUser()
 
   const app = createApp(App)
   app

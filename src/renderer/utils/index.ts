@@ -1,4 +1,5 @@
 import { dateFormat } from '@common/utils/common'
+import { toNewMusicInfo } from '@common/utils/tools'
 
 export * from '@common/utils/renderer'
 export * from '@common/utils/nodejs'
@@ -38,7 +39,7 @@ export const dateFormat2 = (time: number): string => {
  */
 let dom_title = document.getElementsByTagName('title')[0]
 export const setTitle = (title: string | null) => {
-  title ||= 'LX Music'
+  title ||= 'LX-N Music'
   dom_title.innerText = title
 }
 
@@ -79,4 +80,15 @@ export const langS2T = async(str: string) => {
 export const decodeName = (str: string | null = '') => {
   if (!str) return ''
   return new window.DOMParser().parseFromString(str, 'text/html').body.textContent
+}
+
+/**
+ * 将网易云原始歌曲列表（old-format 或已转换的 MusicInfo）统一规范为可直接交给
+ * material-online-list 渲染的 MusicInfo 数组，过滤掉缺少 songId 的无效项。
+ */
+export const normalizeWySongs = (list: any[]): LX.Music.MusicInfo[] => {
+  return (list || []).map(item => {
+    if (item?.meta?.songId) return item
+    return toNewMusicInfo(item)
+  }).filter(item => item?.meta?.songId)
 }

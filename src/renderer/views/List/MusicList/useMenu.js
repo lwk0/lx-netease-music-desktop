@@ -2,6 +2,8 @@ import { computed, ref, shallowReactive, reactive, nextTick } from '@common/util
 import musicSdk from '@renderer/utils/musicSdk'
 import { useI18n } from '@renderer/plugins/i18n'
 import { hasDislike } from '@renderer/core/dislikeList'
+import { appSetting } from '@renderer/store/setting'
+import { userState } from '@renderer/store/user'
 
 export default ({
   assertApiSupport,
@@ -18,6 +20,7 @@ export default ({
   handleOpenMusicDetail,
   handleCopyName,
   handleDislikeMusic,
+  handleLikeMusic,
   handleRemoveMusic,
 }) => {
   const itemMenuControl = reactive({
@@ -31,6 +34,9 @@ export default ({
     download: true,
     search: true,
     dislike: true,
+    like: true,
+    likeDisabled: true,
+    isLiked: false,
     remove: true,
     sourceDetail: true,
   })
@@ -91,6 +97,11 @@ export default ({
         disabled: !itemMenuControl.search,
       },
       {
+        name: itemMenuControl.isLiked ? t('list__unlike') : t('list__like'),
+        action: 'like',
+        disabled: itemMenuControl.likeDisabled,
+      },
+      {
         name: t('list__dislike'),
         action: 'dislike',
         disabled: !itemMenuControl.dislike,
@@ -110,6 +121,12 @@ export default ({
     itemMenuControl.download = assertApiSupport(musicInfo.source) && musicInfo.source != 'local'
 
     itemMenuControl.dislike = !hasDislike(musicInfo)
+
+    const isWySong = musicInfo.source === 'wy'
+    const isLoggedIn = !!appSetting['common.wy_cookie'] && !!userState.wy_uid
+    const id = musicInfo.songmid ?? musicInfo.meta?.songId
+    itemMenuControl.likeDisabled = !isWySong || !isLoggedIn
+    itemMenuControl.isLiked = isWySong && isLoggedIn && id != null && userState.wy_liked_song_ids.has(String(id))
 
     menuLocation.x = event.pageX
     menuLocation.y = event.pageY
@@ -160,6 +177,9 @@ export default ({
         break
       case 'dislike':
         handleDislikeMusic(index)
+        break
+      case 'like':
+        handleLikeMusic(index)
         break
       case 'remove':
         handleRemoveMusic(index)

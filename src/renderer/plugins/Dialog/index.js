@@ -33,8 +33,9 @@ export const dialog = function(options) {
     instance.teleport = teleport
     instance.selection = selection
 
-    // 挂载
-    document.getElementById('container').appendChild(instance.$el)
+    // 挂载（#container 在 App.vue 渲染后才存在，某些初始化阶段的弹窗可能触发得更早，故降级到 #root / body）
+    let container = document.getElementById('container') || document.getElementById('root') || document.body
+    container.appendChild(instance.$el)
 
     instance.handleCancel = () => {
       instance.visible = false

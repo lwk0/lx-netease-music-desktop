@@ -6,6 +6,15 @@ import musicSearch from './musicSearch'
 import songList from './songList'
 import hotSearch from './hotSearch'
 import comment from './comment'
+import dailyRec from './dailyRec'
+import * as apiCookie from './api-cookie'
+import artist from './artist'
+import album from './album'
+import user from './user'
+import musicDetail from './musicDetail'
+import { getMvUrl } from './mv'
+import { getMusicQualityInfo, getBatchMusicQualityInfo } from './quality_detail'
+import { resolveQualityAlias } from '../utils'
 // import tipSearch from './tipSearch'
 
 const wy = {
@@ -15,8 +24,17 @@ const wy = {
   songList,
   hotSearch,
   comment,
+  artist,
+  album,
+  dailyRec,
+  cookie: apiCookie,
+  user,
+  musicDetail,
+  mv: { getMvUrl },
+  quality: { getMusicQualityInfo, getBatchMusicQualityInfo },
   getMusicUrl(songInfo, type) {
-    return apis('wy').getMusicUrl(songInfo, type)
+    const qualityToRequest = resolveQualityAlias('wy', type)
+    return apis('wy').getMusicUrl(songInfo, qualityToRequest)
   },
   getLyric(songInfo) {
     return getLyric(songInfo.songmid)

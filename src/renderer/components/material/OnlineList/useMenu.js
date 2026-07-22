@@ -2,6 +2,8 @@ import { computed, ref, reactive, nextTick } from '@common/utils/vueTools'
 import musicSdk from '@renderer/utils/musicSdk'
 import { useI18n } from '@renderer/plugins/i18n'
 import { hasDislike } from '@renderer/core/dislikeList'
+import { appSetting } from '@renderer/store/setting'
+import { userState } from '@renderer/store/user'
 
 export default ({
   props,
@@ -15,6 +17,8 @@ export default ({
   handleShowMusicAddModal,
   handleOpenMusicDetail,
   handleDislikeMusic,
+  handleLikeMusic,
+  handleRemoveFromList,
 }) => {
   const itemMenuControl = reactive({
     play: true,
@@ -24,13 +28,16 @@ export default ({
     search: true,
     sourceDetail: true,
     dislike: true,
+    like: true,
+    likeDisabled: true,
+    isLiked: false,
   })
   const t = useI18n()
   const menuLocation = reactive({ x: 0, y: 0 })
   const isShowItemMenu = ref(false)
 
   const menus = computed(() => {
-    return [
+    const list = [
       {
         name: t('list__play'),
         action: 'play',
@@ -62,11 +69,24 @@ export default ({
         disabled: !itemMenuControl.sourceDetail,
       },
       {
+        name: itemMenuControl.isLiked ? t('list__unlike') : t('list__like'),
+        action: 'like',
+        disabled: itemMenuControl.likeDisabled,
+      },
+      {
         name: t('list__dislike'),
         action: 'dislike',
         disabled: !itemMenuControl.dislike,
       },
     ]
+    if (props.editable) {
+      list.push({
+        name: t('netease__remove_from_list'),
+        action: 'removeFromList',
+        disabled: false,
+      })
+    }
+    return list
   })
 
   const showMenu = (event, musicInfo) => {
@@ -77,11 +97,11 @@ export default ({
 
     itemMenuControl.dislike = !hasDislike(musicInfo)
 
-    if (props.checkApiSource) {
-      itemMenuControl.playLater =
-      itemMenuControl.play =
-        itemMenuControl.download
-    }
+    const isWySong = musicInfo.source === 'wy'
+    const isLoggedIn = !!appSetting['common.wy_cookie'] && !!userState.wy_uid
+    const id = musicInfo.songmid ?? musicInfo.meta?.songId
+    itemMenuControl.likeDisabled = !isWySong || !isLoggedIn
+    itemMenuControl.isLiked = isWySong && isLoggedIn && id != null && userState.wy_liked_song_ids.has(String(id))
 
     menuLocation.x = event.pageX
     menuLocation.y = event.pageY
@@ -123,6 +143,12 @@ export default ({
         break
       case 'dislike':
         handleDislikeMusic(index)
+        break
+      case 'like':
+        handleLikeMusic(index)
+        break
+      case 'removeFromList':
+        if (handleRemoveFromList) handleRemoveFromList(index)
         break
     }
   }

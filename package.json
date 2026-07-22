@@ -1,7 +1,7 @@
 {
-  "name": "lx-music-desktop",
+  "name": "lx-netease-music-desktop",
   "version": "2.12.2",
-  "description": "一个免费的音乐查找助手",
+  "description": "LX Music 桌面版网易云增强魔改版（基于 lx-music-desktop）",
   "main": "./dist/main.js",
   "scripts": {
     "pack": "node build-config/pack.js && npm run pack:win:setup:x64",
@@ -10,6 +10,7 @@
     "pack:win:setup:x64": "node build-config/build-pack.js target=win arch=x64 type=setup",
     "pack:win:setup:x86": "node build-config/build-pack.js target=win arch=x86 type=setup",
     "pack:win:setup:arm64": "node build-config/build-pack.js target=win arch=arm64 type=setup",
+    "pack:win:msix:x64": "node build-config/build-pack.js target=win arch=x64 type=msix",
     "pack:win:portable": "npm run pack:win:portable:x86_64 && npm run pack:win:portable:x64 && npm run pack:win:portable:x86",
     "pack:win:portable:x86_64": "node build-config/build-pack.js target=win arch=x86_64 type=portable",
     "pack:win:portable:x64": "node build-config/build-pack.js target=win arch=x64 type=portable",
@@ -76,36 +77,37 @@
   },
   "macLanguagesInfoPlistStrings": {
     "en": {
-      "CFBundleDisplayName": "LX Music",
-      "CFBundleName": "LX Music"
+      "CFBundleDisplayName": "LX-N Music",
+      "CFBundleName": "LX-N Music"
     },
     "zh_CN": {
-      "CFBundleDisplayName": "LX Music",
-      "CFBundleName": "LX Music"
+      "CFBundleDisplayName": "LX-N Music",
+      "CFBundleName": "LX-N Music"
     },
     "zh_TW": {
-      "CFBundleDisplayName": "LX Music",
-      "CFBundleName": "LX Music"
+      "CFBundleDisplayName": "LX-N Music",
+      "CFBundleName": "LX-N Music"
     }
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lyswhut/lx-music-desktop.git"
+    "url": "git+https://github.com/lwk0/lx-netease-music-desktop.git"
   },
   "keywords": [
     "music-player",
     "electron-app",
-    "vuejs3"
+    "vuejs3",
+    "netease-cloud-music",
+    "lx-music"
   ],
   "author": {
-    "name": "lyswhut",
-    "email": "lyswhut@qq.com"
+    "name": "lwk0"
   },
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/lyswhut/lx-music-desktop/issues"
+    "url": "https://github.com/lwk0/lx-netease-music-desktop/issues"
   },
-  "homepage": "https://github.com/lyswhut/lx-music-desktop#readme",
+  "homepage": "https://github.com/lwk0/lx-netease-music-desktop#readme",
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.13",
     "@types/better-sqlite3": "^7.6.13",

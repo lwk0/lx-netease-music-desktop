@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { existsSync, mkdirSync, renameSync } from 'fs'
-import { app, shell, screen, nativeTheme, dialog } from 'electron'
+import { app, shell, screen, nativeTheme, dialog, ipcMain, BrowserWindow } from 'electron'
 import { URL_SCHEME_RXP } from '@common/constants'
 import { getProxy, getTheme, initHotKey, initSetting, parseEnvParams } from './utils'
 import { navigationUrlWhiteList } from '@common/config'
@@ -167,8 +167,64 @@ export const registerDeeplink = (startApp: () => void) => {
 }
 
 export const listenerAppEvent = (startApp: () => void) => {
+  // 记录网易云内嵌登录页使用的 session，使其子 webview（第三方登录弹窗）也能放行
+  const neteaseSessions = new WeakSet<Electron.Session>()
+  let pendingNeteaseGuest = false
+  let neteasePartition = ''
+  // 由 preload 转交的第三方登录 URL：用「同 partition」的 BrowserWindow 打开，
+  // 保证 OAuth 流程产生的 Cookie 落在被主进程轮询捕获的同一 session
+  ipcMain.on('netease-login-open-url', (_event, url) => {
+    console.log('[LX open-oauth]', url, 'partition=', neteasePartition)
+    if (!neteasePartition || typeof url !== 'string' || !/^https?:\/\//.test(url)) return
+    try {
+      const oauthWin = new BrowserWindow({
+        width: 480,
+        height: 720,
+        show: true,
+        webPreferences: {
+          partition: neteasePartition,
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      })
+      void oauthWin.loadURL(url)
+    } catch (e) {
+      console.error('[LX open-oauth] create window failed', e)
+    }
+  })
   app.on('web-contents-created', (event, contents) => {
+    const isNetease = () => {
+      try {
+        return neteaseSessions.has(contents.session)
+      } catch {
+        return false
+      }
+    }
+    // 第三方登录（QQ/微信/微博等）通过 window.open 弹出 OAuth 页。
+    // 必须让它在 Electron 内以「同 partition」打开，而不是跳转到系统浏览器，
+    // 这样 Cookie 落在同一 session，主进程可轮询捕获完成登录。
+    const oauthHostRxp = /(music\.163\.com|qq\.com|weixin\.qq\.com|graph\.qq\.com|qlogo\.cn|weibo\.com)/
+    contents.setWindowOpenHandler(({ url, referrer }) => {
+      const fromNeteaseLogin = neteasePartition !== '' &&
+        (oauthHostRxp.test(url) || (referrer?.url ? oauthHostRxp.test(referrer.url) : false))
+      const allow = isNetease() || fromNeteaseLogin
+      console.log('[LX popup]', { url, referrer, isNetease: isNetease(), fromNeteaseLogin, allow, partition: neteasePartition })
+      if (allow) {
+        // 不手动指定 partition：webview 弹出的子窗口会默认继承 webview 的 partition，
+        // Cookie 自然落在同一 session，主进程可轮询捕获；手动 override 反而可能致创建失败
+        return { action: 'allow' }
+      }
+      if (!/^devtools/.test(url) && /^https?:\/\//.test(url)) {
+        void shell.openExternal(url)
+      }
+      console.log(url)
+      return { action: 'deny' }
+    })
     contents.on('will-navigate', (event, navigationUrl) => {
+      if (isNetease()) {
+        console.log('[LX navigate]', navigationUrl)
+        return
+      }
       if (process.env.NODE_ENV !== 'production') {
         console.log('navigation to url:', navigationUrl.length > 130 ? navigationUrl.substring(0, 130) + '...' : navigationUrl)
         return
@@ -179,14 +235,16 @@ export const listenerAppEvent = (startApp: () => void) => {
       }
       console.log('navigation to url:', navigationUrl)
     })
-    contents.setWindowOpenHandler(({ url }) => {
-      if (!/^devtools/.test(url) && /^https?:\/\//.test(url)) {
-        void shell.openExternal(url)
-      }
-      console.log(url)
-      return { action: 'deny' }
-    })
     contents.on('will-attach-webview', (event, webPreferences, params) => {
+      if (params.partition && params.partition.startsWith('netease-login-embedded')) {
+        // 网易云登录页：保留自定义 preload；允许弹窗以便 QQ/微信等第三方登录
+        // 在同 partition 内打开子 webview（共享 session，Cookie 可被主进程轮询捕获）
+        pendingNeteaseGuest = true
+        neteasePartition = params.partition
+        ;(webPreferences as Electron.WebPreferences & { allowpopups?: boolean }).allowpopups = true
+        webPreferences.nodeIntegration = false
+        return
+      }
       // Strip away preload scripts if unused or verify their location is legitimate
       delete webPreferences.preload
       // delete webPreferences.preloadURL
@@ -197,6 +255,18 @@ export const listenerAppEvent = (startApp: () => void) => {
       // Verify URL being loaded
       if (!navigationUrlWhiteList.some(url => url.test(params.src))) {
         event.preventDefault()
+      }
+    })
+    contents.on('did-attach-webview', (event, guestWebContents) => {
+      if (pendingNeteaseGuest) {
+        try {
+          neteaseSessions.add(guestWebContents.session)
+        } catch {}
+        pendingNeteaseGuest = false
+        // 子窗口（OAuth 弹窗）的 window.open 也由 guest 自身处理，确保留在 Electron 内
+        try {
+          guestWebContents.setWindowOpenHandler(() => ({ action: 'allow' }))
+        } catch {}
       }
     })
 

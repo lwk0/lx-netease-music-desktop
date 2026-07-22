@@ -102,6 +102,10 @@ const modules = {
     save_sound_effect_eq_preset: 'save_sound_effect_eq_preset',
     get_sound_effect_convolution_preset: 'get_sound_effect_convolution_preset',
     save_sound_effect_convolution_preset: 'save_sound_effect_convolution_preset',
+
+    netease_web_login_start: 'netease_web_login_start',
+    netease_web_login_stop: 'netease_web_login_stop',
+    netease_web_clear_cookie: 'netease_web_clear_cookie',
     // get_sound_effect_pitch_shifter_preset: 'get_sound_effect_pitch_shifter_preset',
     // save_sound_effect_pitch_shifter_preset: 'save_sound_effect_pitch_shifter_preset',
     get_hot_key: 'get_hot_key',

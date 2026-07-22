@@ -4,6 +4,7 @@ module.exports = {
   // preserveWhitepace: true,
   compilerOptions: {
     whitespace: 'preserve',
+    isCustomElement: (tag) => tag === 'webview',
   },
   extractCSS: !isDev,
   // cssModules: {

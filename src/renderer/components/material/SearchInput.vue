@@ -1,5 +1,5 @@
 <template>
-  <div :class="$style.container">
+  <div :class="[$style.container, isOriginalStyle ? $style.original : '']">
     <div :class="[$style.search, {[$style.active]: focus}, {[$style.big]: big}, {[$style.small]: small}]">
       <div :class="$style.form">
         <input
@@ -93,6 +93,11 @@ export default {
         height: 0,
       },
     }
+  },
+  computed: {
+    isOriginalStyle() {
+      return appSetting['search.searchBoxStyle'] === 'original'
+    },
   },
   watch: {
     list(n) {
@@ -203,23 +208,28 @@ export default {
 
 .container {
   position: relative;
-  width: 35%;
-  height: @height-toolbar * 0.52;
+  width: 32%;
+  max-width: 380px;
+  min-width: 220px;
+  height: 26px;
   -webkit-app-region: no-drag;
 }
 
 .search {
   position: absolute;
   width: 100%;
-  border-radius: @form-radius;
-  transition: box-shadow .4s ease, background-color @transition-normal;
+  border-radius: 13px;
+  transition: box-shadow .4s ease, background-color @transition-normal, border-color .3s ease;
   display: flex;
   flex-flow: column nowrap;
   background-color: var(--color-primary-light-300-alpha-700);
+  border: 1px solid var(--color-primary-light-100-alpha-500);
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.06);
 
   &.active {
     background-color: var(--color-primary-light-600-alpha-100);
-    box-shadow: 0 1px 5px 0 rgba(0,0,0,.2);
+    border-color: var(--color-primary-alpha-600);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.12), 0 0 0 3px var(--color-primary-alpha-900);
     .form {
       input {
         border-bottom-left-radius: 0;
@@ -232,13 +242,13 @@ export default {
   }
   .form {
     display: flex;
-    height: @height-toolbar * 0.52;
+    height: 26px;
     position: relative;
     input {
       flex: auto;
       // border: 1px solid;
-      border-top-left-radius: 3px;
-      border-bottom-left-radius: 3px;
+      border-top-left-radius: 13px;
+      border-bottom-left-radius: 13px;
       background-color: transparent;
       // border-bottom: 2px solid var(--color-primary);
       // border-color: var(--color-primary);
@@ -247,12 +257,12 @@ export default {
 
       outline: none;
       // height: @height-toolbar * .7;
-      padding: 0 5px;
+      padding: 0 12px;
       overflow: hidden;
-      font-size: 13.5px;
-      line-height: @height-toolbar * 0.52 + 5px;
+      font-size: 13px;
+      line-height: 26px;
       &::placeholder {
-        color: var(--color-button-font);
+        color: var(--color-font-label);
         font-size: .98em;
       }
     }
@@ -264,16 +274,17 @@ export default {
       outline: none;
       cursor: pointer;
       height: 100%;
-      padding: 6px 7px;
+      padding: 4px 9px;
       color: var(--color-button-font);
-      transition: background-color .2s ease;
+      transition: background-color .2s ease, color .2s ease;
 
       &:last-child {
-        border-top-right-radius: 3px;
-        border-bottom-right-radius: 3px;
+        border-top-right-radius: 13px;
+        border-bottom-right-radius: 13px;
       }
 
       &:hover {
+        color: var(--color-primary);
         background-color: var(--color-button-background-hover);
       }
       &:active {
@@ -290,7 +301,7 @@ export default {
     overflow: hidden;
     li {
       cursor: pointer;
-      padding: 8px 5px;
+      padding: 7px 12px;
       transition: background-color .2s ease;
       line-height: 1.3;
       span {
@@ -301,8 +312,8 @@ export default {
         background-color: var(--color-primary-dark-100-alpha-700);
       }
       &:last-child {
-        border-bottom-left-radius: 3px;
-        border-bottom-right-radius: 3px;
+        border-bottom-left-radius: 13px;
+        border-bottom-right-radius: 13px;
       }
     }
   }
@@ -317,6 +328,48 @@ export default {
     height: 30px;
     button {
       padding: 6px 10px;
+    }
+  }
+}
+
+.original {
+  width: 35%;
+  max-width: none;
+  min-width: 0;
+  height: @height-toolbar * 0.52;
+
+  .search {
+    border-radius: @form-radius;
+    border: none;
+    box-shadow: none;
+
+    &.active {
+      box-shadow: 0 1px 5px 0 rgba(0, 0, 0, .2);
+    }
+  }
+  .form {
+    height: @height-toolbar * 0.52;
+    input {
+      padding: 0 5px;
+      border-top-left-radius: 3px;
+      border-bottom-left-radius: 3px;
+      font-size: 13.5px;
+    }
+    button {
+      padding: 6px 7px;
+      &:last-child {
+        border-top-right-radius: 3px;
+        border-bottom-right-radius: 3px;
+      }
+    }
+  }
+  .list {
+    li {
+      padding: 8px 5px;
+      &:last-child {
+        border-bottom-left-radius: 3px;
+        border-bottom-right-radius: 3px;
+      }
     }
   }
 }

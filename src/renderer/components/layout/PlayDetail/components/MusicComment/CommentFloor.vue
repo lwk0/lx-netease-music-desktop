@@ -12,11 +12,15 @@ div(:class="$style.container")
               div(:class="$style.metaInfo")
                 time(v-if="item.timeStr" :class="$style.label") {{ timeFormat(item.timeStr) }}
                 div(v-if="item.location" :class="$style.label") {{ $t('comment__location', { location: item.location }) }}
-            div(v-if="item.likedCount != null" :class="$style.likes")
+            div(v-if="item.likedCount != null" :class="[$style.likes, item.liked ? $style.liked : '']" @click.stop="handleLike(item)")
               svg(:class="$style.likesIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" space="preserve")
                 use(xlink:href="#icon-thumbs-up")
               | {{ item.likedCount }}
-          p.select(:class="$style.comment_text") {{ item.text }}
+          p.select(:class="$style.comment_text") {{ displayedText(item) }}
+          div(v-if="showActions" :class="$style.actions")
+            span(:class="$style.action" @click.stop="handleReply(item)") {{ $t('comment__reply') }}
+            span(:class="$style.action" @click.stop="handleTranslate(item)") {{ transLabel(item) }}
+            span(v-if="isOwnComment(item)" :class="$style.action" @click.stop="handleDelete(item)") {{ $t('comment__recall') }}
           div(v-if="item.images?.length" :class="$style.comment_images")
             img(v-for="(url, index) in item.images" :key="index" :src="url" loading="lazy" decoding="async")
       comment-floor(v-if="item.reply && item.reply.length" :class="$style.reply_floor" :comments="item.reply")
@@ -24,6 +28,8 @@ div(:class="$style.container")
 
 <script>
 import commentDefImg from '@renderer/assets/images/defaultUser.jpg'
+import { userState } from '@renderer/store/user'
+import { translateText } from '@renderer/utils/translate'
 
 export default {
   name: 'CommentFloor',
@@ -34,10 +40,17 @@ export default {
         return []
       },
     },
+    showActions: {
+      type: Boolean,
+      default: true,
+    },
   },
+  emits: ['reply', 'delete', 'like'],
   data() {
     return {
       commentDefImg,
+      // 每个评论的翻译状态：{ status: 'idle'|'loading'|'done'|'error', text, shown }
+      transMap: {},
     }
   },
   methods: {
@@ -47,6 +60,54 @@ export default {
     },
     handleUserImg(event) {
       event.target.src = this.commentDefImg
+    },
+    // 是否为当前登录用户自己发布的评论（仅自己可撤回）
+    isOwnComment(item) {
+      return !!userState.wy_uid && String(item.userId) === String(userState.wy_uid)
+    },
+    handleReply(item) {
+      this.$emit('reply', item)
+    },
+    handleDelete(item) {
+      this.$emit('delete', item)
+    },
+    handleLike(item) {
+      this.$emit('like', item)
+    },
+    transLabel(item) {
+      const e = this.transMap[item.id]
+      if (!e || e.status === 'idle') return this.$t('comment__translate')
+      if (e.status === 'loading') return this.$t('comment__translating')
+      if (e.status === 'error') return this.$t('comment__translate_failed')
+      return e.shown ? this.$t('comment__show_original') : this.$t('comment__translate')
+    },
+    displayedText(item) {
+      const e = this.transMap[item.id]
+      if (e && e.status === 'done' && e.shown) return e.text
+      return item.text
+    },
+    async handleTranslate(item) {
+      const id = item.id
+      const e = this.transMap[id] || { status: 'idle', text: '', shown: false }
+      if (e.status === 'loading') return
+      // 已翻译：切换“显示原文 / 显示译文”
+      if (e.status === 'done') {
+        e.shown = !e.shown
+        this.transMap = { ...this.transMap }
+        return
+      }
+      e.status = 'loading'
+      this.transMap = { ...this.transMap, [id]: e }
+      try {
+        const text = await translateText(item.text)
+        e.status = 'done'
+        e.text = text
+        e.shown = true
+      } catch (err) {
+        console.error('翻译评论失败', err)
+        e.status = 'error'
+      }
+      this.transMap = { ...this.transMap, [id]: e }
     },
   },
 }
@@ -133,6 +194,16 @@ export default {
   margin-right: 3px;
   color: var(--color-primary-alpha-500);
 }
+.likes {
+  cursor: pointer;
+  transition: color @transition-fast;
+}
+.liked {
+  color: var(--color-primary);
+  .likesIcon {
+    color: var(--color-primary);
+  }
+}
 .comment_text {
   text-align: justify;
   font-size: 14px;
@@ -140,6 +211,20 @@ export default {
   word-break: break-all;
   overflow-wrap: break-word;
   white-space: pre-wrap;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-font-label);
+}
+.action {
+  cursor: pointer;
+  transition: color @transition-fast;
+  &:hover {
+    color: var(--color-primary);
+  }
 }
 .comment_images {
   display: flex;

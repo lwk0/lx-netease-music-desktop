@@ -33,6 +33,9 @@
           <use xlink:href="#icon-nextMusic" />
         </svg>
       </div>
+      <div :class="$style.playBtn">
+        <player-playlist />
+      </div>
     </div>
   </div>
 </template>
@@ -43,6 +46,7 @@ import { status, isPlay } from '@renderer/store/player/state'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 
 import ControlBtns from './components/ControlBtns.vue'
+import PlayerPlaylist from '../PlayBar/components/PlayerPlaylist.vue'
 
 const {
   nowPlayTimeStr,

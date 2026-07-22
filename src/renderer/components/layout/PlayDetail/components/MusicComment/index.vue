@@ -20,7 +20,7 @@ div.comment(ref="dom_container" :class="$style.comment")
           div.scroll(ref="dom_commentHot" :class="$style.tab_content_scroll")
             p(v-if="hotComment.isLoadError" :class="$style.commentLabel" style="cursor: pointer;" @click="handleGetHotComment(currentMusicInfo, hotComment.nextPage, hotComment.limit)") {{ $t('comment__hot_load_error') }}
             p(v-else-if="hotComment.isLoading && !hotComment.list.length" :class="$style.commentLabel") {{ $t('comment__hot_loading') }}
-            comment-floor(v-if="!hotComment.isLoadError && hotComment.list.length" :class="[$style.commentFloor, hotComment.isLoading ? $style.loading : null]" :comments="hotComment.list")
+            comment-floor(v-if="!hotComment.isLoadError && hotComment.list.length" :class="[$style.commentFloor, hotComment.isLoading ? $style.loading : null]" :comments="hotComment.list" :show-actions="canSendComment" @reply="handleSetReplyTarget" @like="handleLike" @delete="handleDelete")
             p(v-else-if="!hotComment.isLoadError && !hotComment.isLoading" :class="$style.commentLabel") {{ $t('comment__no_content') }}
             div(:class="$style.pagination")
               material-pagination(:count="hotComment.total" :btn-length="5" :limit="hotComment.limit" :page="hotComment.page" @btn-click="handleToggleHotCommentPage")
@@ -28,18 +28,38 @@ div.comment(ref="dom_container" :class="$style.comment")
           div.scroll(ref="dom_commentNew" :class="$style.tab_content_scroll")
             p(v-if="newComment.isLoadError" :class="$style.commentLabel" style="cursor: pointer;" @click="handleGetNewComment(currentMusicInfo, newComment.nextPage, newComment.limit)") {{ $t('comment__new_load_error') }}
             p(v-else-if="newComment.isLoading && !newComment.list.length" :class="$style.commentLabel") {{ $t('comment__new_loading') }}
-            comment-floor(v-if="!newComment.isLoadError && newComment.list.length" :class="[$style.commentFloor, newComment.isLoading ? $style.loading : null]" :comments="newComment.list")
+            comment-floor(v-if="!newComment.isLoadError && newComment.list.length" :class="[$style.commentFloor, newComment.isLoading ? $style.loading : null]" :comments="newComment.list" :show-actions="canSendComment" @reply="handleSetReplyTarget" @like="handleLike" @delete="handleDelete")
             p(v-else-if="!newComment.isLoadError && !newComment.isLoading" :class="$style.commentLabel") {{ $t('comment__no_content') }}
             div(:class="$style.pagination")
               material-pagination(:count="newComment.total" :btn-length="5" :limit="newComment.limit" :page="newComment.page" @btn-click="handleToggleCommentPage")
     div(v-else :class="$style.unavailable")
       p {{ $t('comment__unavailable') }}
+  div(v-if="available" :class="$style.commentInput")
+    div(v-if="replyTarget" :class="$style.replyTarget")
+      span {{ $t('comment__reply_to', { name: replyTarget.userName }) }}
+      span(:class="$style.replyCancel" :aria-label="$t('comment__cancel_reply')" @click="handleCancelReply")
+        svg(version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve")
+          use(xlink:href="#icon-close")
+    div(:class="$style.inputRow")
+      input(
+        ref="dom_input"
+        v-model="inputText"
+        :class="$style.input"
+        :placeholder="sendInputPlaceholder"
+        :disabled="!canSendComment || isSending"
+        @keydown.enter.exact.prevent="handleSend"
+      )
+      button(:class="$style.sendBtn" :disabled="!canSendComment || isSending || !inputText.trim()" :aria-label="$t('comment__send')" @click="handleSend")
+        svg(version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" space="preserve")
+          path(d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a.993.993 0 00-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 14.01a1 1 0 00-.87 1L2 20.49a.993.993 0 001.4.91z" fill="currentColor")
 </template>
 
 <script>
 import { toOldMusicInfo } from '@renderer/utils'
 import music from '@renderer/utils/musicSdk'
 import CommentFloor from './CommentFloor.vue'
+import { userState } from '@renderer/store/user'
+import { toast, toastError } from '@renderer/utils/toast'
 
 export default {
   name: 'MusicComment',
@@ -62,6 +82,9 @@ export default {
         singer: '',
       },
       tabActiveId: 'hot',
+      replyTarget: null,
+      inputText: '',
+      isSending: false,
       newComment: {
         isLoading: false,
         isLoadError: false,
@@ -113,6 +136,23 @@ export default {
       },
     }
   },
+  computed: {
+    isLoggedIn() {
+      return !!userState.wy_uid
+    },
+    isWySource() {
+      return this.currentMusicInfo?.source === 'wy'
+    },
+    canSendComment() {
+      return this.available && this.currentMusicInfo?.source === 'wy' && !!userState.wy_uid
+    },
+    sendInputPlaceholder() {
+      if (!this.isWySource) return this.$t('comment__only_wy')
+      if (!this.isLoggedIn) return this.$t('comment__login_required')
+      if (this.replyTarget) return this.$t('comment__reply_placeholder', { name: this.replyTarget.userName })
+      return this.$t('comment__send_placeholder')
+    },
+  },
   watch: {
     show(n) {
       if (n) this.handleShowComment()
@@ -128,7 +168,7 @@ export default {
   methods: {
     setWidth() {
       setTimeout(() => {
-        this.$refs.dom_container.style.width = Math.floor(this.$refs.dom_container.parentNode.clientWidth * 0.5) + 'px'
+        this.$refs.dom_container.style.width = Math.floor(this.$refs.dom_container.parentNode.clientWidth * 0.65) + 'px'
 
         setTimeout(() => {
           this.handleToggleTab(this.tabActiveId, true)
@@ -236,6 +276,80 @@ export default {
           break
       }
       this.tabActiveId = id
+    },
+    handleSetReplyTarget(item) {
+      if (!this.canSendComment) return
+      this.replyTarget = item
+      this.$refs.dom_input?.focus()
+    },
+    handleCancelReply() {
+      this.replyTarget = null
+    },
+    async handleSend() {
+      if (!this.canSendComment) return
+      const text = this.inputText.trim()
+      if (!text) return
+      this.isSending = true
+      try {
+        const wyComment = music.wy.comment
+        if (this.replyTarget) {
+          await wyComment.replyComment(toOldMusicInfo(this.currentMusicInfo), this.replyTarget.id, text)
+        } else {
+          await wyComment.sendComment(toOldMusicInfo(this.currentMusicInfo), text)
+        }
+        toast(this.replyTarget ? this.$t('comment__reply_success') : this.$t('comment__send_success'))
+        this.inputText = ''
+        this.replyTarget = null
+        // 刷新当前评论列表
+        if (this.tabActiveId === 'hot') {
+          this.handleGetHotComment(this.currentMusicInfo, 1, this.hotComment.limit)
+        } else {
+          this.handleGetNewComment(this.currentMusicInfo, 1, this.newComment.limit)
+        }
+      } catch (err) {
+        console.error('发送评论失败:', err)
+        toastError(err?.message || this.$t('comment__send_failed'))
+      } finally {
+        this.isSending = false
+      }
+    },
+    async handleLike(item) {
+      if (!this.canSendComment) return
+      const isLiked = item.liked
+      // 乐观更新：先改本地状态，保证高亮/取消即时生效
+      item.liked = !isLiked
+      item.likedCount = Math.max(0, (item.likedCount || 0) + (isLiked ? -1 : 1))
+      try {
+        await music.wy.comment.likeComment(toOldMusicInfo(this.currentMusicInfo), item.id, !isLiked)
+        toast(this.$t(isLiked ? 'comment__unlike_success' : 'comment__like_success'))
+      } catch (err) {
+        // 失败回滚本地状态
+        item.liked = isLiked
+        item.likedCount = Math.max(0, (item.likedCount || 0) + (isLiked ? 1 : -1))
+        console.error('点赞评论失败:', err)
+        toastError(err?.message || this.$t('comment__like_failed'))
+      }
+    },
+    async handleDelete(item) {
+      if (!this.canSendComment) return
+      try {
+        await music.wy.comment.deleteComment(toOldMusicInfo(this.currentMusicInfo), item.id)
+        toast(this.$t('comment__delete_success'))
+        // 从当前列表移除并刷新
+        this.hotComment.list = this.hotComment.list.filter(c => c.id !== item.id)
+        this.newComment.list = this.newComment.list.filter(c => c.id !== item.id)
+        this.refreshCurrentTab()
+      } catch (err) {
+        console.error('删除评论失败:', err)
+        toastError(err?.message || this.$t('comment__delete_failed'))
+      }
+    },
+    refreshCurrentTab() {
+      if (this.tabActiveId === 'hot') {
+        this.handleGetHotComment(this.currentMusicInfo, this.hotComment.page, this.hotComment.limit)
+      } else {
+        this.handleGetNewComment(this.currentMusicInfo, this.newComment.page, this.newComment.limit)
+      }
     },
   },
 }
@@ -362,6 +476,81 @@ export default {
   text-align: center;
   font-size: 14px;
   color: var(--color-font-label);
+}
+
+.commentInput {
+  flex: none;
+  margin-top: 8px;
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 6px;
+}
+.replyTarget {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-primary);
+}
+.replyCancel {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  opacity: .8;
+  &:hover {
+    opacity: 1;
+  }
+}
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.input {
+  flex: auto;
+  min-width: 0;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+  color: var(--color-font);
+  background-color: var(--color-primary-light-400-alpha-700);
+  border: 1px solid var(--color-primary-alpha-700);
+  border-radius: 18px;
+  outline: none;
+  transition: border-color @transition-normal;
+  &:focus {
+    border-color: var(--color-primary);
+  }
+  &:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+  }
+}
+.sendBtn {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: opacity @transition-normal;
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+  &:hover:not(:disabled) {
+    opacity: .85;
+  }
+  &:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
 }
 
 </style>

@@ -7,6 +7,8 @@ import {
   nextTick,
   onMounted,
   onBeforeUnmount,
+  onActivated,
+  onDeactivated,
   toRaw,
   useCssModule,
   toRef,
@@ -58,6 +60,8 @@ export const markRawList = <T extends any[]>(list: T) => {
 export {
   nextTick,
   onBeforeUnmount,
+  onActivated,
+  onDeactivated,
   ref,
   toRaw,
   reactive,

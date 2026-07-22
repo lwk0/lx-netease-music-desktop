@@ -54,7 +54,7 @@ import { useRoute } from '@common/utils/vueRouter'
 
 import SettingBasic from './components/SettingBasic.vue'
 import SettingPlay from './components/SettingPlay.vue'
-import SettingPlayDetail from './components/SettingPlayDetail.vue'
+import SettingDetail from './components/SettingDetail.vue'
 import SettingDesktopLyric from './components/SettingDesktopLyric.vue'
 import SettingSearch from './components/SettingSearch.vue'
 import SettingList from './components/SettingList.vue'
@@ -68,13 +68,14 @@ import SettingBackup from './components/SettingBackup.vue'
 import SettingOther from './components/SettingOther.vue'
 import SettingUpdate from './components/SettingUpdate.vue'
 import SettingAbout from './components/SettingAbout.vue'
+import SettingNetEase from './components/SettingNetEase.vue'
 
 export default {
   name: 'Setting',
   components: {
     SettingBasic,
     SettingPlay,
-    SettingPlayDetail,
+    SettingDetail,
     SettingDesktopLyric,
     SettingSearch,
     SettingList,
@@ -88,6 +89,7 @@ export default {
     SettingOther,
     SettingUpdate,
     SettingAbout,
+    SettingNetEase,
   },
   setup() {
     const t = useI18n()
@@ -99,7 +101,7 @@ export default {
       return [
         { id: 'SettingBasic', title: t('setting__basic') },
         { id: 'SettingPlay', title: t('setting__play') },
-        { id: 'SettingPlayDetail', title: t('setting__play_detail') },
+        { id: 'SettingDetail', title: t('setting__detail') },
         { id: 'SettingDesktopLyric', title: t('setting__desktop_lyric') },
         { id: 'SettingSearch', title: t('setting__search') },
         { id: 'SettingList', title: t('setting__list') },
@@ -113,6 +115,7 @@ export default {
         { id: 'SettingOther', title: t('setting__other') },
         { id: 'SettingUpdate', title: t('setting__update') },
         { id: 'SettingAbout', title: t('setting__about') },
+        { id: 'SettingNetEase', title: t('setting__netease') },
       ]
     })
 

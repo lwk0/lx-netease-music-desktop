@@ -15,9 +15,9 @@ div(:class="$style.footerLeftControlBtns")
     svg(version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="95%" viewBox="0 0 24 24" space="preserve")
       use(xlink:href="#icon-comment")
   common-sound-effect-btn
-  common-playback-rate-btn
   common-volume-btn
   common-toggle-play-mode-btn
+  wy-like-btn
   button(:class="$style.footerLeftControlBtn" :aria-label="$t('player__add_music_to')" @click="isShowAddMusicTo = true")
     svg(version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" space="preserve")
       use(xlink:href="#icon-add-2")
@@ -44,13 +44,14 @@ import useToggleDesktopLyric from '@renderer/utils/compositions/useToggleDesktop
 import { dialog } from '@renderer/plugins/Dialog'
 import { setMediaDeviceId } from '@renderer/plugins/player'
 import { appSetting, saveMediaDeviceId, setEnableAudioVisualization } from '@renderer/store/setting'
+import WyLikeBtn from '@renderer/components/common/WyLikeBtn.vue'
 
 export default {
+  components: {
+    WyLikeBtn,
+  },
   setup() {
     const t = useI18n()
-    // const setting = useRefGetter('setting')
-    // const setAudioVisualization = useCommit('setAudioVisualization')
-    // const saveMediaDeviceId = useCommit('setMediaDeviceId')
 
     const toggleVisibleLrc = () => {
       setShowPlayLrcSelectContentLrc(!isShowLrcSelectContent.value)

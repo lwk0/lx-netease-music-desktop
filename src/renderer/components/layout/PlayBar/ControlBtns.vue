@@ -1,6 +1,9 @@
 <template>
   <div :class="$style.controlBtn">
     <!-- <common-volume-bar /> -->
+    <div :class="$style.likeBtnWrap">
+      <wy-like-btn :music-info="playMusicInfo.musicInfo" />
+    </div>
     <button :class="$style.titleBtn" :aria-label="$t('player__add_music_to')" @click="addMusicTo">
       <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="90%" viewBox="0 0 512 512" space="preserve">
         <use xlink:href="#icon-add-2" />
@@ -25,8 +28,12 @@ import { ref } from '@common/utils/vueTools'
 import useToggleDesktopLyric from '@renderer/utils/compositions/useToggleDesktopLyric'
 import { musicInfo, playMusicInfo } from '@renderer/store/player/state'
 import { appSetting } from '@renderer/store/setting'
+import WyLikeBtn from '@renderer/components/common/WyLikeBtn.vue'
 
 export default {
+  components: {
+    WyLikeBtn,
+  },
   setup() {
     const isShowAddMusicTo = ref(false)
     const {
@@ -60,6 +67,7 @@ export default {
   flex: none;
   display: flex;
   flex-flow: row nowrap;
+  align-items: center;
   gap: 10px;
 
   button {
@@ -95,6 +103,16 @@ export default {
   &:active {
     opacity: 1;
   }
+}
+
+.likeBtnWrap {
+  flex: none;
+  height: 100%;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --like-btn-size: 20px;
 }
 
 

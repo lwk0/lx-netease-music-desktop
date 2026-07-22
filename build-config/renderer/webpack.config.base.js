@@ -78,7 +78,7 @@ module.exports = {
         }),
       },
       {
-        test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+        test: /\.(png|jpe?g|gif|svg|webp)(\?.*)?$/,
         exclude: path.join(__dirname, '../../src/renderer/assets/svgs'),
         type: 'asset',
         parser: {

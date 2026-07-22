@@ -865,7 +865,7 @@ export default {
         songmid: item.audio_info.audio_id,
         source: 'kg',
         interval: formatPlayTime(parseInt(item.audio_info.timelength) / 1000),
-        img: null,
+        img: (item.album_info?.sizable_cover || item.album_sizable_cover || item.imgurl)?.replace('{size}', '480') ?? null,
         lrc: null,
         hash: item.audio_info.hash,
         otherSource: null,

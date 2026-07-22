@@ -78,9 +78,11 @@ export const createUserList = async({ name, id = `userlist_${Date.now()}`, list 
 
 export const setTempList = async(id: string, list: LX.Music.MusicInfoOnline[]) => {
   tempListMeta.id = id
+  // 深拷贝歌曲对象，避免多选或响应式数据中存在不可序列化的属性导致 IPC 克隆失败
+  const musicInfos = list.map(item => JSON.parse(JSON.stringify(item)))
   await overwriteListMusics({
     listId: LIST_IDS.TEMP,
-    musicInfos: list,
+    musicInfos,
   })
 }
 

@@ -47,6 +47,30 @@ const router = createRouter({
       },
     },
     {
+      path: '/myNetease',
+      name: 'MyNetease',
+      component: require('./views/MyNetease/index.vue').default,
+      meta: {
+        name: 'MyNetease',
+      },
+    },
+    {
+      path: '/artist/detail',
+      name: 'ArtistDetail',
+      component: require('./views/Artist/Detail/index.vue').default,
+      meta: {
+        name: 'ArtistDetail',
+      },
+    },
+    {
+      path: '/album/detail',
+      name: 'AlbumDetail',
+      component: require('./views/Album/Detail/index.vue').default,
+      meta: {
+        name: 'AlbumDetail',
+      },
+    },
+    {
       path: '/download',
       name: 'Download',
       component: require('./views/Download/index.vue').default,
@@ -60,6 +84,14 @@ const router = createRouter({
       component: require('./views/Setting/index.vue').default,
       meta: {
         name: 'Setting',
+      },
+    },
+    {
+      path: '/netease/login',
+      name: 'NeteaseLogin',
+      component: require('./views/NeteaseLogin/index.vue').default,
+      meta: {
+        name: 'NeteaseLogin',
       },
     },
     { path: '/:pathMatch(.*)*', redirect: '/search' },

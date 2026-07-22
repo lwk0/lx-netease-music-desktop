@@ -6,6 +6,10 @@ dd
   .gap-top
     base-checkbox(id="setting_list_showSource_enable" :model-value="appSetting['list.isShowSource']" :label="$t('setting__list_source')" @update:model-value="updateSetting({'list.isShowSource': $event})")
   .gap-top
+    base-checkbox(id="setting_list_showCover_enable" :model-value="appSetting['list.isShowCover']" :label="$t('setting__list_show_cover')" @update:model-value="updateSetting({'list.isShowCover': $event})")
+  .gap-top
+    base-checkbox(id="setting_list_column_customization_enable" :model-value="appSetting['list.columnCustomizationEnabled']" :label="$t('setting__list_column_customization')" @update:model-value="updateSetting({'list.columnCustomizationEnabled': $event})")
+  .gap-top
     base-checkbox(id="setting_list_scroll_enable" :model-value="appSetting['list.isSaveScrollLocation']" :label="$t('setting__list_scroll')" @update:model-value="updateSetting({'list.isSaveScrollLocation': $event})")
   .gap-top
     base-checkbox(id="setting_list_clickAction_enable" :model-value="appSetting['list.isClickPlayList']" :label="$t('setting__list_click_action')" @update:model-value="updateSetting({'list.isClickPlayList': $event})")

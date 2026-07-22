@@ -7,6 +7,9 @@ import { playNext } from '@renderer/core/player'
 import { playMusicInfo } from '@renderer/store/player/state'
 import { dialog } from '@renderer/plugins/Dialog'
 import { useI18n } from '@renderer/plugins/i18n'
+import { userState } from '@renderer/store/user'
+import { toggleWyLikedSong } from '@renderer/store/user/action'
+import { toast, toastSuccess } from '@renderer/utils/toast'
 
 
 export default ({ props }) => {
@@ -44,10 +47,34 @@ export default ({ props }) => {
     }
   }
 
+  const handleLikeMusic = async(index) => {
+    const minfo = props.list[index]
+    const id = minfo.songmid ?? minfo.meta?.songId
+    if (id == null) {
+      toast(t('netease__like_failed'))
+      return
+    }
+    const songId = String(id)
+    const isLiked = userState.wy_liked_song_ids.has(songId)
+    const willLike = !isLiked
+    if (willLike) userState.wy_liked_song_ids.add(songId)
+    else userState.wy_liked_song_ids.delete(songId)
+    try {
+      await toggleWyLikedSong(songId, willLike)
+      toastSuccess(willLike ? 'netease__like_success' : 'netease__unlike_success')
+    } catch (e) {
+      if (willLike) userState.wy_liked_song_ids.delete(songId)
+      else userState.wy_liked_song_ids.add(songId)
+      console.error('喜欢操作失败', e)
+      toast(e?.message || t('netease__like_failed'))
+    }
+  }
+
 
   return {
     handleSearch,
     handleOpenMusicDetail,
     handleDislikeMusic,
+    handleLikeMusic,
   }
 }

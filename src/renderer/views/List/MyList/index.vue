@@ -34,6 +34,18 @@
         </span>
       </li>
       <li
+        class="default-list" :class="[$style.listsItem, {[$style.active]: tempList.id == listId}, {[$style.clicked]: rightClickItemIndex == -3}, {[$style.fetching]: fetchingListStatus[tempList.id]}]"
+        :aria-label="$t(tempList.name)" :aria-selected="tempList.id == listId"
+        @contextmenu="handleListsItemRigthClick($event, -3)" @click="handleListToggle(tempList.id)"
+      >
+        <span :class="$style.listsLabel">
+          <transition name="list-active">
+            <svg-icon v-if="tempList.id == listId" name="angle-right-solid" :class="$style.activeIcon" />
+          </transition>
+          {{ $t(tempList.name) }}
+        </span>
+      </li>
+      <li
         class="default-list" :class="[$style.listsItem, {[$style.active]: loveList.id == listId}, {[$style.clicked]: rightClickItemIndex == -1}, {[$style.fetching]: fetchingListStatus[loveList.id]}]"
         :aria-label="$t(loveList.name)" :aria-selected="loveList.id == listId"
         @contextmenu="handleListsItemRigthClick($event, -1)" @click="handleListToggle(loveList.id)"
@@ -81,12 +93,11 @@
 <script>
 import { openUrl } from '@common/utils/electron'
 
-import musicSdk from '@renderer/utils/musicSdk'
 import DuplicateMusicModal from './components/DuplicateMusicModal.vue'
 import ListSortModal from './components/ListSortModal.vue'
 import ListUpdateModal from './components/ListUpdateModal.vue'
 
-import { defaultList, loveList, userLists, fetchingListStatus } from '@renderer/store/list/state'
+import { defaultList, loveList, tempList, userLists, fetchingListStatus } from '@renderer/store/list/state'
 import { removeUserList } from '@renderer/store/list/action'
 
 import { ref, watch } from '@common/utils/vueTools'
@@ -197,7 +208,7 @@ export default {
     }
 
     const handleMenuClick = (action) => {
-      if (rightClickItemIndex.value < -2) return
+      if (rightClickItemIndex.value < -3) return
       let index = rightClickItemIndex.value
       rightClickItemIndex.value = -10
       menuClick(action, index)
@@ -224,6 +235,7 @@ export default {
       rightClickItemIndex,
       defaultList,
       loveList,
+      tempList,
       userLists,
       fetchingListStatus,
       dom_lists_list,
@@ -280,28 +292,31 @@ export default {
 .headerBtns {
   flex: none;
   display: flex;
+  padding-right: 5px;
+  align-items: center;
 }
 .listsAdd {
   // position: absolute;
   // right: 0;
-  margin-top: 6px;
   background: none;
   height: 30px;
   border: none;
   outline: none;
   border-radius: @radius-border;
   cursor: pointer;
-  opacity: .1;
-  transition: opacity @transition-normal;
+  opacity: .45;
+  transition: opacity @transition-normal, background-color .2s ease;
   color: var(--color-button-font);
+  padding: 2px 6px;
   svg {
     vertical-align: bottom;
   }
   &:active {
-    opacity: .7 !important;
+    opacity: 1 !important;
   }
   &:hover {
-    opacity: .6 !important;
+    opacity: 1 !important;
+    background-color: var(--color-button-background-hover);
   }
 }
 .listsContent {

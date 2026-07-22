@@ -1,5 +1,6 @@
 import { BrowserWindow, dialog, session } from 'electron'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { createTaskBarButtons, getWindowSizeInfo } from './utils'
 import { getPlatform, isLinux, isWin } from '@common/utils'
 import { getProxy, openDevTools as handleOpenDevTools } from '@main/utils'
@@ -96,6 +97,7 @@ export const createWindow = () => {
       sandbox: false,
       enableWebSQL: false,
       webgl: false,
+      webviewTag: true,
       spellcheck: false, // 禁用拼写检查器
     },
   }
@@ -106,7 +108,7 @@ export const createWindow = () => {
   }
   browserWindow = new BrowserWindow(options)
 
-  const winURL = process.env.NODE_ENV !== 'production' ? 'http://localhost:9080' : `file://${path.join(encodePath(__dirname), 'index.html')}`
+  const winURL = process.env.NODE_ENV !== 'production' ? 'http://localhost:9191' : `file://${path.join(encodePath(__dirname), 'index.html')}`
   void browserWindow.loadURL(winURL + `?os=${getPlatform()}&dt=${global.envParams.cmdParams.dt}&dark=${shouldUseDarkColors}&theme=${encodeURIComponent(JSON.stringify(theme))}`)
 
   winEvent()
@@ -115,6 +117,46 @@ export const createWindow = () => {
 
   // global.lx.mainWindowClosed = false
   // browserWindow.webContents.openDevTools()
+
+  // 网易云内嵌登录页清理：主进程直接控制 webview guest webContents，
+  // 强制关闭 contextIsolation 并加载 preload，同时通过 insertCSS/executeJavaScript 兜底。
+  const NETEASE_LOGIN_PRELOAD = pathToFileURL(path.join(global.staticPath, 'netease-login-preload.js')).href
+  const cleanupCss = '#g_top,.m-top,#g_nav,.m-subnav,.g-ft,.m-ft,footer,.m-download,.m-banner,.m-hd,.g-hd{display:none !important;}#login-wrapper,.g-bd{padding-top:0 !important;margin-top:0 !important;}body,html{padding-top:0 !important;margin-top:0 !important;background:#fff !important;}::-webkit-scrollbar{width:6px;height:6px;background-color:transparent;}::-webkit-scrollbar-track{background-color:rgba(113,191,150,0.2);border-radius:3px;}::-webkit-scrollbar-thumb{border-radius:3px;background-color:rgba(77,175,124,0.4);}::-webkit-scrollbar-thumb:hover{background-color:rgba(77,175,124,0.6);}'
+  const cleanupJs = `(() => {
+    const sels = ['#g_top','.m-top','#g_nav','.m-subnav','.g-ft','.m-ft','footer','.m-download','.m-banner','.m-hd','.g-hd'];
+    sels.forEach(sel => { try { document.querySelectorAll(sel).forEach(n => n.remove()); } catch (e) {} });
+    try { document.querySelectorAll('#login-wrapper,.g-bd').forEach(n => { n.style.paddingTop = '0px'; n.style.marginTop = '0px'; }); } catch (e) {}
+    try { document.body.style.paddingTop = '0px'; document.body.style.marginTop = '0px'; } catch (e) {}
+    let st = document.getElementById('lx-netease-login-cleanup');
+    if (!st) { st = document.createElement('style'); st.id = 'lx-netease-login-cleanup'; st.textContent = ${JSON.stringify(cleanupCss)}; document.head.appendChild(st); }
+  })()`
+
+  browserWindow.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+    if (params.partition && params.partition.startsWith('netease-login-embedded')) {
+      webPreferences.contextIsolation = false
+      webPreferences.preload = NETEASE_LOGIN_PRELOAD
+      ;(webPreferences as Electron.WebPreferences & { allowpopups?: boolean }).allowpopups = true
+    }
+  })
+
+  browserWindow.webContents.on('did-attach-webview', (event, guestWebContents) => {
+    const injectIfNetease = () => {
+      const url = guestWebContents.getURL()
+      if (!url.includes('music.163.com')) return
+      void guestWebContents.insertCSS(cleanupCss)
+      void guestWebContents.executeJavaScript(cleanupJs, false)
+    }
+    guestWebContents.on('dom-ready', injectIfNetease)
+    guestWebContents.on('did-finish-load', injectIfNetease)
+    guestWebContents.on('did-navigate', injectIfNetease)
+    let n = 0
+    const timer = setInterval(() => {
+      injectIfNetease()
+      n++
+      if (n >= 40) clearInterval(timer)
+    }, 500)
+  })
+
   global.lx.event_app.main_window_created(browserWindow)
 }
 

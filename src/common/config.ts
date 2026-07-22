@@ -50,7 +50,10 @@ export const windowSizeList: WindowSize[] = [
   },
 ]
 
-export const navigationUrlWhiteList: RegExp[] = []
+export const navigationUrlWhiteList: RegExp[] = [
+  // 网易云网页登录使用 <webview> 内嵌加载，需允许其域名
+  /^https?:\/\/(.*\.)?(163\.com|netease\.com)\//,
+]
 
 // 基础黑白色
 // export const commonColorNames = [

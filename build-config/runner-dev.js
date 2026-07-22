@@ -48,7 +48,7 @@ function startRenderer() {
     // })
 
     const server = new WebpackDevServer({
-      port: 9080,
+      port: 9191,
       hot: true,
       historyApiFallback: true,
       static: {

@@ -18,10 +18,17 @@
         </base-btn>
         <base-btn
           :class="$style.headerRightBtn"
-          :disabled="!!listDetailInfo.noItemLabel"
-          @click="addSongListDetail(listDetailInfo.id, listDetailInfo.source, listDetailInfo.info.name)"
+          @click="handleCollectLx"
         >
-          {{ $t('list__collect') }}
+          {{ isCollectedLx ? $t('list__collect_lx_cancel') : $t('list__collect_lx') }}
+        </base-btn>
+        <base-btn
+          v-if="isWy"
+          :class="$style.headerRightBtn"
+          :disabled="!isLoggedIn"
+          @click="handleToggleSubscribe"
+        >
+          {{ isSubscribed ? $t('netease__unsubscribe_wyy') : $t('netease__subscribe_wyy') }}
         </base-btn>
         <base-btn :class="$style.headerRightBtn" @click="handleBack">{{ $t('back') }}</base-btn>
       </div>
@@ -34,21 +41,32 @@
         :total="listDetailInfo.total"
         :list="listDetailInfo.list"
         :no-item="listDetailInfo.noItemLabel"
+        :editable="isOwnPlaylist"
+        :playlist-id="id"
+        :playlist-source="source"
         @play-list="handlePlayList"
         @toggle-page="togglePage"
+        @remove-from-list="handleRemoveFromList"
       />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { ref, watch } from '@common/utils/vueTools'
+import { ref, watch, computed } from '@common/utils/vueTools'
 import { listDetailInfo } from '@renderer/store/songList/state'
 import { setVisibleListDetail } from '@renderer/store/songList/action'
 import { useRouter } from '@common/utils/vueRouter'
 import { addSongListDetail, playSongListDetail } from './action'
 import useList from './useList'
 import useKeyBack from './useKeyBack'
+import musicSdk from '@renderer/utils/musicSdk'
+import { userState, addWySubscribedPlaylist, removeWySubscribedPlaylist } from '@renderer/store/user'
+import { useI18n } from '@renderer/plugins/i18n'
+import { toast, toastError } from '@renderer/utils/toast'
+import { toMD5 } from '@renderer/utils'
+import { userLists } from '@renderer/store/list/listManage/state'
+import { removeUserList } from '@renderer/store/list/listManage/rendererListManage'
 
 
 const source = ref<LX.OnlineSource>('kw')
@@ -67,7 +85,7 @@ interface Query {
   fromName?: string
 }
 
-const verifyQueryParams = async function(this: any, to: { query: Query, path: string }, from: any, next: (route?: { path: string, query: Query }) => void) {
+const verifyQueryParams = async function(this: any, to: { query: Query, path: string }, from: any, next: (route?: { path: string, query: Record<string, string> }) => void) {
   let _source = to.query.source
   let _id = to.query.id
   let _page: string | undefined = to.query.page
@@ -82,13 +100,21 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
       _picUrl = listDetailInfo.info.img
     } else {
       setVisibleListDetail(false)
-      next({ path: '/songList/list', query: {} })
+      const emptyQuery: Record<string, string> = {}
+      next({ path: '/songList/list', query: emptyQuery })
       return
     }
 
+    const query: Record<string, string> = {
+      source: String(_source),
+      id: String(_id),
+    }
+    if (_page != null) query.page = _page
+    if (_picUrl != null) query.picUrl = _picUrl
+    if (_refresh != null) query.refresh = _refresh
     next({
       path: to.path,
-      query: { ...to.query, source: _source, id: _id, page: _page, picUrl: _picUrl, refresh: _refresh },
+      query,
     })
     return
   }
@@ -108,6 +134,7 @@ export default {
   beforeRouteUpdate: verifyQueryParams,
   setup() {
     const router = useRouter()
+    const t = useI18n()
 
     const {
       listRef,
@@ -116,6 +143,15 @@ export default {
       handlePlayList,
     } = useList()
 
+    const isWy = computed(() => source.value === 'wy')
+    const isLoggedIn = computed(() => !!userState.wy_uid)
+    const isSubscribed = computed(() => userState.wy_subscribed_playlists.some(p => String(p.id) === String(id.value)))
+    const isOwnPlaylist = computed(() => isWy.value && userState.wy_playlists.some(p => String(p.id) === String(id.value)))
+    const isCollectedLx = computed(() => {
+      const listId = `${source.value}__${id.value}`
+      const newId = `${source.value}_${toMD5(listId)}`
+      return userLists.some(l => l.sourceListId === listId || l.id === newId)
+    })
 
     const togglePage = (page: number) => {
       void getListData(source.value, id.value, page, refresh.value)
@@ -125,6 +161,69 @@ export default {
       setVisibleListDetail(false)
       if (window.lx.songListInfo.fromName) void router.replace({ name: window.lx.songListInfo.fromName })
       else router.back()
+    }
+
+    const handleToggleSubscribe = async() => {
+      if (!isLoggedIn.value) {
+        toastError(t('netease__login_required'))
+        return
+      }
+      try {
+        if (isSubscribed.value) {
+          await musicSdk.wy.user.subPlaylist(id.value, false)
+          removeWySubscribedPlaylist(id.value)
+          toast(t('netease__unsubscribe_success'))
+        } else {
+          await musicSdk.wy.user.subPlaylist(id.value, true)
+          addWySubscribedPlaylist({
+            id: id.value,
+            name: listDetailInfo.info.name ?? '',
+            coverImgUrl: listDetailInfo.info.img ?? '',
+            trackCount: listDetailInfo.total,
+            userId: 0,
+          })
+          toast(t('netease__subscribe_success'))
+        }
+        // 刷新歌单数据以同步最新状态
+        void getListData(source.value, id.value, page.value, refresh.value)
+      } catch (err: any) {
+        toastError(err?.message || t('netease__subscribe_failed'))
+      }
+    }
+
+    const handleCollectLx = async() => {
+      const listId = `${source.value}__${id.value}`
+      const newId = `${source.value}_${toMD5(listId)}`
+      const target = userLists.find(l => l.sourceListId === listId || l.id === newId)
+      if (target) {
+        try {
+          await removeUserList([target.id])
+          toast(t('list__collect_lx_cancel_success') || '已取消收藏到LX')
+        } catch (err: any) {
+          toastError(err?.message || t('list__collect_lx_cancel_failed') || '取消收藏失败')
+        }
+        return
+      }
+      try {
+        await addSongListDetail(id.value, source.value, listDetailInfo.info.name)
+        toast(t('list__collect_lx_success') || '已收藏到LX')
+      } catch (err: any) {
+        toastError(err?.message || t('list__collect_lx_failed') || '收藏到LX失败')
+      }
+    }
+
+    const handleRemoveFromList = async(index: number) => {
+      if (!isOwnPlaylist.value) return
+      const musicInfo = listDetailInfo.list[index] as any
+      const songId = musicInfo?.meta?.songId
+      if (!songId) return
+      try {
+        await musicSdk.wy.user.manipulatePlaylistTracks('del', id.value, [songId])
+        toast(t('netease__remove_from_list_success') || '已从歌单移除')
+        void getListData(source.value, id.value, page.value, refresh.value)
+      } catch (err: any) {
+        toastError(err?.message || t('netease__remove_from_list_failed'))
+      }
     }
 
     useKeyBack(handleBack)
@@ -149,10 +248,17 @@ export default {
       listDetailInfo,
       listRef,
       togglePage,
-      addSongListDetail,
       playSongListDetail,
       handlePlayList,
       handleBack,
+      isWy,
+      isLoggedIn,
+      isSubscribed,
+      isOwnPlaylist,
+      isCollectedLx,
+      handleCollectLx,
+      handleToggleSubscribe,
+      handleRemoveFromList,
     }
   },
 }

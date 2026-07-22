@@ -16,7 +16,7 @@ export const loveList = markRaw<LX.List.MyLoveListInfo>({
 })
 export const tempList = markRaw<LX.List.MyTempListInfo>({
   id: LIST_IDS.TEMP,
-  name: '临时列表',
+  name: 'list__name_temp',
   meta: {},
 })
 

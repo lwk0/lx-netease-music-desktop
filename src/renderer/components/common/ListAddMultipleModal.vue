@@ -2,7 +2,19 @@
   <material-modal :show="show" :bg-close="bgClose" max-width="70%" :teleport="teleport" @close="handleClose">
     <main :class="$style.main">
       <h2>{{ $t('list_add__multiple_' + (isMove ? 'title_move' : 'title_add'), { num: musicList.length }) }}</h2>
-      <div class="scroll" :class="$style.btnContent">
+      <div :class="$style.tabs">
+        <button
+          :class="[$style.tab, activeTab === 'local' ? $style.active : null]"
+          @click="activeTab = 'local'"
+        >{{ $t('list_add__tab_local') }}</button>
+        <button
+          :class="[$style.tab, activeTab === 'online' ? $style.active : null]"
+          :disabled="!isOnlineEnabled"
+          :title="onlineDisabledTip"
+          @click="activeTab = 'online'"
+        >{{ $t('list_add__tab_online') }}</button>
+      </div>
+      <div v-if="activeTab === 'local'" class="scroll" :class="$style.btnContent">
         <base-btn v-for="(item, index) in lists" :key="item.id" :class="$style.btn" :aria-label="$t('list_add__multiple_btn_title', { name: item.name })" @click="handleClick(index)">{{ item.name }}</base-btn>
         <base-btn :class="[$style.btn, $style.newList, isEditing ? $style.editing : null]" :aria-label="$t('lists__new_list_btn')" @click="handleEditing($event)">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 42 42" space="preserve">
@@ -12,17 +24,30 @@
         </base-btn>
         <span v-for="i in spaceNum" :key="i" :class="$style.btn" />
       </div>
+      <div v-else class="scroll" :class="$style.btnContent">
+        <base-btn v-for="(item, index) in onlineLists" :key="item.id" :class="$style.btn" :aria-label="$t('list_add__multiple_btn_title', { name: item.name })" :disabled="!item.isOwn" :title="item.isOwn ? '' : $t('list_add__online_not_own')" @click="handleOnlineClick(index)">{{ item.name }}</base-btn>
+        <base-btn :class="[$style.btn, $style.newList, isOnlineEditing ? $style.editing : null]" :aria-label="$t('list_add__online_new_list')" @click="handleOnlineEditing($event)">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 42 42" space="preserve">
+            <use xlink:href="#icon-addTo" />
+          </svg>
+          <base-input :class="$style.newListInput" :value="newOnlineListName" :placeholder="$t('list_add__online_new_list_input')" @keyup.enter="handleSaveOnlineList($event)" @blur="handleSaveOnlineList($event)" />
+        </base-btn>
+        <span v-for="i in onlineSpaceNum" :key="i" :class="$style.btn" />
+      </div>
     </main>
   </material-modal>
 </template>
 
 <script>
-import { computed } from '@common/utils/vueTools'
+import { computed, ref, watch } from '@common/utils/vueTools'
 import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import { addListMusics, moveListMusics, createUserList } from '@renderer/store/list/action'
+import { userState, loadWyPlaylists } from '@renderer/store/user'
+import musicSdk from '@renderer/utils/musicSdk'
 import useKeyDown from '@renderer/utils/compositions/useKeyDown'
 import { useI18n } from '@root/lang'
 import { dialog } from '@renderer/plugins/Dialog'
+import { toast, toastError } from '@renderer/utils/toast'
 
 export default {
   props: {
@@ -67,6 +92,20 @@ export default {
   setup(props) {
     const keyModDown = useKeyDown('mod')
     const t = useI18n()
+    const activeTab = ref('local')
+
+    const rawList = computed(() => {
+      return 'progress' in props.musicList[0] ? props.musicList.map(t => t.metadata.musicInfo) : props.musicList
+    })
+
+    const wySongs = computed(() => rawList.value.filter(m => m.source === 'wy'))
+    const isLoggedIn = computed(() => !!userState.wy_uid)
+    const isOnlineEnabled = computed(() => isLoggedIn.value && wySongs.value.length > 0)
+    const onlineDisabledTip = computed(() => {
+      if (!isLoggedIn.value) return t('list_add__online_login_tip')
+      if (wySongs.value.length === 0) return t('list_add__online_only_wy')
+      return ''
+    })
 
     const lists = computed(() => {
       return [
@@ -75,15 +114,39 @@ export default {
         ...userLists,
       ].filter(l => !props.excludeListId.includes(l.id))
     })
+    const onlineLists = computed(() => {
+      const uid = userState.wy_uid
+      return userState.wy_playlists.map(p => ({
+        ...p,
+        isOwn: String(p.userId) === String(uid),
+      }))
+    })
+
+    watch(() => props.show, show => {
+      if (show) {
+        activeTab.value = 'local'
+        if (isOnlineEnabled.value) void loadWyPlaylists()
+      }
+    })
+
     return {
       keyModDown,
+      t,
       lists,
+      activeTab,
+      onlineLists,
+      isOnlineEnabled,
+      onlineDisabledTip,
+      wySongs,
+      userState,
     }
   },
   data() {
     return {
       isEditing: false,
+      isOnlineEditing: false,
       newListName: '',
+      newOnlineListName: '',
       rowNum: 3,
     }
   },
@@ -91,6 +154,10 @@ export default {
 
     spaceNum() {
       return this.lists.length < 2 ? 0 : (this.rowNum - this.lists.length % this.rowNum - 1)
+    },
+    onlineSpaceNum() {
+      const len = this.onlineLists.length
+      return len < 2 ? 0 : (this.rowNum - len % this.rowNum - 1)
     },
   },
   mounted() {
@@ -121,13 +188,37 @@ export default {
         this.$emit('confirm')
       })
     },
+    handleOnlineClick(index) {
+      const list = this.onlineLists[index]
+      if (!list.isOwn) return
+      const trackIds = this.wySongs.map(m => m.songmid).filter(Boolean)
+      if (trackIds.length === 0) {
+        toastError(this.t('list_add__online_add_failed'))
+        return
+      }
+      void musicSdk.wy.user.manipulatePlaylistTracks('add', list.id, trackIds).then(() => {
+        toast(this.t('list_add__online_add_success', { name: list.name }))
+      }).catch((err) => {
+        console.error('批量添加到网易云歌单失败', err)
+        toastError(err.message || this.t('list_add__online_add_failed'))
+      })
+      if (this.keyModDown && !this.isMove) return
+      this.$nextTick(() => {
+        this.handleClose()
+        this.$emit('confirm')
+      })
+    },
     handleClose() {
       this.$emit('update:show', false)
     },
     handleEditing(event) {
       if (this.isEditing) return
-      // if (!this.newListName) this.newListName = this.listName
       this.isEditing = true
+      this.$nextTick(() => event.currentTarget.querySelector('.' + this.$style.newListInput).focus())
+    },
+    handleOnlineEditing(event) {
+      if (this.isOnlineEditing) return
+      this.isOnlineEditing = true
       this.$nextTick(() => event.currentTarget.querySelector('.' + this.$style.newListInput).focus())
     },
     async handleSaveList(event) {
@@ -138,6 +229,22 @@ export default {
         userLists.some(l => l.name == name) && !(await dialog.confirm(window.i18n.t('list_duplicate_tip'))))
       ) return
       void createUserList({ name })
+    },
+    async handleSaveOnlineList(event) {
+      let name = event.target.value.trim()
+      this.newOnlineListName = event.target.value = ''
+      this.isOnlineEditing = false
+      if (!name) return
+      const duplicate = userState.wy_playlists.some(p => p.name === name)
+      if (duplicate && !(await dialog.confirm(window.i18n.t('list_duplicate_tip')))) return
+      try {
+        await musicSdk.wy.user.createPlaylist(name)
+        toast(this.t('list_add__online_create_success'))
+        await loadWyPlaylists()
+      } catch (err) {
+        console.error('创建网易云歌单失败', err)
+        toastError(err.message || this.t('list_add__online_create_failed'))
+      }
     },
   },
 }
@@ -163,6 +270,40 @@ export default {
     line-height: 1.3;
     text-align: center;
     padding: 15px;
+  }
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tab {
+  background: transparent;
+  border: 1px solid var(--color-primary-font-hover);
+  border-radius: @form-radius;
+  color: var(--color-font);
+  padding: 5px 15px;
+  cursor: pointer;
+  font-size: 13px;
+  outline: none;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-button-background-hover);
+  }
+
+  &.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 

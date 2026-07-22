@@ -4,9 +4,10 @@
       <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
         <div v-show="showContent" :class="[$style.modal, {[$style.filter]: filter}]" @click="bgClose && close()">
           <transition :enter-active-class="inClass" :leave-active-class="outClass" @after-enter="$emit('after-enter', $event)" @after-leave="handleAfterLeave">
-            <div v-show="showContent" :class="$style.content" :style="contentStyle" @click.stop>
-              <header :class="$style.header">
-                <button v-if="closeBtn" type="button" @click="close">
+            <div v-show="showContent" ref="dom_content" :class="$style.content" :style="contentStyle" @click.stop>
+              <header v-if="!hideHeader" :class="[$style.header, {[$style.hasTitle]: title}]" @mousedown="draggable ? startDrag($event) : null">
+                <span v-if="title" :class="$style.headerTitle">{{ title }}</span>
+                <button v-if="closeBtn" type="button" @mousedown.stop @click="close">
                   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 212.982 212.982" space="preserve">
                     <use xlink:href="#icon-delete" />
                   </svg>
@@ -37,6 +38,10 @@ export default {
       type: Boolean,
       default: true,
     },
+    hideHeader: {
+      type: Boolean,
+      default: false,
+    },
     bgClose: {
       type: Boolean,
       default: false,
@@ -64,6 +69,14 @@ export default {
     height: {
       type: String,
       default: 'auto',
+    },
+    draggable: {
+      type: Boolean,
+      default: false,
+    },
+    title: {
+      type: String,
+      default: '',
     },
   },
   emits: ['after-enter', 'after-leave', 'close'],
@@ -145,6 +158,16 @@ export default {
       showContent: false,
       modalCount: false,
       isAddedClass: false,
+      dragX: 0,
+      dragY: 0,
+      dragStartX: 0,
+      dragStartY: 0,
+      dragContentWidth: 0,
+      dragContentHeight: 0,
+      dragTopOffset: 54,
+      isDragging: false,
+      dragMoveHandler: null,
+      dragUpHandler: null,
       // ai: 0,
     }
   },
@@ -156,6 +179,7 @@ export default {
         width: this.width,
         height: this.height,
         maxHeight: this.maxHeight,
+        transform: this.draggable ? `translate(${this.dragX}px, ${this.dragY}px)` : undefined,
       }
     },
     filter() {
@@ -173,10 +197,13 @@ export default {
   },
   beforeUnmount() {
     this.removeClass()
+    if (this.isDragging) this.stopDrag()
   },
   methods: {
     handleShowChange(val) {
       if (val) {
+        this.dragX = 0
+        this.dragY = 0
         // const dom = document.getElementById(this.teleport)
         // if (dom) {
         //   // dom.t
@@ -220,6 +247,66 @@ export default {
     handleAfterLeave(event) {
       this.$emit('after-leave', event)
       this.showModal = false
+    },
+    startDrag(event) {
+      if (!this.draggable) return
+      const contentEl = this.$refs.dom_content
+      if (contentEl) {
+        const rect = contentEl.getBoundingClientRect()
+        this.dragContentWidth = rect.width
+        this.dragContentHeight = rect.height
+      }
+      // 顶部工具栏（layout-toolbar，窗口拖拽区）高度，面板禁止拖入该区域，否则点到的是主窗口标题栏
+      const toolbarEl = document.getElementById('toolbar')
+      this.dragTopOffset = toolbarEl ? toolbarEl.getBoundingClientRect().height : 54
+      this.isDragging = true
+      this.dragStartX = event.clientX - this.dragX
+      this.dragStartY = event.clientY - this.dragY
+      this.dragMoveHandler = (e) => { this.onDrag(e) }
+      this.dragUpHandler = () => { this.stopDrag() }
+      document.addEventListener('mousemove', this.dragMoveHandler)
+      document.addEventListener('mouseup', this.dragUpHandler)
+    },
+    onDrag(event) {
+      if (!this.isDragging) return
+      const viewportW = window.innerWidth
+      const viewportH = window.innerHeight
+      const w = this.dragContentWidth || 0
+      const h = this.dragContentHeight || 0
+      // 优先让整个面板完整留在窗口内；若面板比窗口还大，则至少保留 60px 可抓取
+      let minX, maxX
+      const maxFitX = (viewportW - w) / 2
+      if (maxFitX >= 0) {
+        minX = -maxFitX
+        maxX = maxFitX
+      } else {
+        minX = -w + 60
+        maxX = viewportW - 60
+      }
+      let minY, maxY
+      const topOffset = this.dragTopOffset || 54
+      // 顶部留出工具栏禁区：面板顶边最低只能到 topOffset，且整体仍留在视口内
+      const topMin = topOffset
+      if (h <= viewportH - topOffset) {
+        // 可在工具栏下方完整容纳
+        minY = topMin - (viewportH - h) / 2
+        maxY = viewportH - h - (viewportH - h) / 2
+      } else {
+        // 面板比可用区域还高，至少保证标题栏（约 38px）可抓取
+        const topMax = Math.max(topMin, viewportH - 38)
+        minY = topMin - (viewportH - h) / 2
+        maxY = topMax - (viewportH - h) / 2
+      }
+      this.dragX = Math.max(minX, Math.min(maxX, event.clientX - this.dragStartX))
+      this.dragY = Math.max(minY, Math.min(maxY, event.clientY - this.dragStartY))
+    },
+    stopDrag() {
+      if (!this.isDragging) return
+      this.isDragging = false
+      document.removeEventListener('mousemove', this.dragMoveHandler)
+      document.removeEventListener('mouseup', this.dragUpHandler)
+      this.dragMoveHandler = null
+      this.dragUpHandler = null
     },
   },
 }
@@ -289,6 +376,21 @@ export default {
   align-items: center;
   justify-content: flex-end;
   height: 18px;
+  user-select: none;
+
+  &.hasTitle {
+    height: 38px;
+    padding: 0 12px;
+    cursor: move;
+    justify-content: space-between;
+  }
+
+  .headerTitle {
+    font-size: 15px;
+    color: var(--color-font);
+    font-weight: 500;
+    pointer-events: none;
+  }
 
   button {
     border: none;

@@ -1,6 +1,7 @@
 import { httpFetch } from '../../request'
 import { weapi } from './utils/crypto'
 import { dateFormat2 } from '../../index'
+import { appSetting } from '@renderer/store/setting'
 
 const emojis = [
   ['大笑', '😃'],
@@ -173,6 +174,16 @@ export default {
     return { source: 'wy', comments: this.filterComment(body.hotComments), total, page, limit, maxPage: Math.ceil(total / limit) || 1 }
   },
   filterComment(rawList) {
+    // 先建立同页评论的 id -> likedCount/liked 映射，用于补全 beReplied 父评论的点赞数与点赞状态
+    const likedCountMap = new Map()
+    const likedMap = new Map()
+    for (const item of rawList) {
+      if (item.commentId != null) {
+        likedCountMap.set(String(item.commentId), item.likedCount)
+        likedMap.set(String(item.commentId), item.liked)
+      }
+    }
+
     return rawList.map(item => {
       let data = {
         id: item.commentId,
@@ -184,25 +195,152 @@ export default {
         avatar: item.user.avatarUrl,
         userId: item.user.userId,
         likedCount: item.likedCount,
+        liked: item.liked ?? false,
         reply: [],
       }
 
       let replyData = item.beReplied && item.beReplied[0]
-      return replyData
-        ? {
-            id: item.commentId,
-            rootId: replyData.beRepliedCommentId,
-            text: replyData.content ? applyEmoji(replyData.content) : '',
-            time: item.time,
-            timeStr: null,
-            location: replyData.ipLocation?.location,
-            userName: replyData.user.nickname,
-            avatar: replyData.user.avatarUrl,
-            userId: replyData.user.userId,
-            likedCount: null,
-            reply: [data],
-          }
-        : data
+      if (!replyData) return data
+
+      const parentId = replyData.beRepliedCommentId
+      let parentLikedCount = likedCountMap.get(String(parentId))
+      if (parentLikedCount == null) {
+        // 部分接口会在 beReplied 里直接返回 likedCount
+        parentLikedCount = replyData.likedCount ?? null
+      }
+      const parentLiked = likedMap.get(String(parentId)) ?? replyData.liked ?? false
+
+      return {
+        id: parentId,
+        rootId: parentId,
+        text: replyData.content ? applyEmoji(replyData.content) : '',
+        time: item.time,
+        timeStr: null,
+        location: replyData.ipLocation?.location,
+        userName: replyData.user.nickname,
+        avatar: replyData.user.avatarUrl,
+        userId: replyData.user.userId,
+        likedCount: parentLikedCount,
+        liked: parentLiked,
+        reply: [data],
+      }
     })
+  },
+
+  async sendComment({ songmid }, content, retryNum = 0) {
+    const cookie = appSetting['common.wy_cookie']
+    if (!cookie) return Promise.reject(new Error('请先登录网易云'))
+    const threadId = 'R_SO_4_' + songmid
+    const csrfToken = (cookie.match(/_csrf=([^(;|$)]+)/) || [])[1] || ''
+    const requestObj = httpFetch('https://music.163.com/weapi/resource/comments/add', {
+      method: 'post',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
+        origin: 'https://music.163.com',
+        Referer: 'https://music.163.com',
+        cookie,
+      },
+      form: weapi({
+        threadId,
+        content,
+        csrf_token: csrfToken,
+      }),
+    })
+    try {
+      const { body, statusCode } = await requestObj.promise
+      if (statusCode != 200 || body.code !== 200) throw new Error(body.message || '发送评论失败')
+      return body
+    } catch (error) {
+      if (retryNum < 2) return this.sendComment({ songmid }, content, retryNum + 1)
+      throw error
+    }
+  },
+
+  async replyComment({ songmid }, commentId, content, retryNum = 0) {
+    const cookie = appSetting['common.wy_cookie']
+    if (!cookie) return Promise.reject(new Error('请先登录网易云'))
+    const threadId = 'R_SO_4_' + songmid
+    const csrfToken = (cookie.match(/_csrf=([^(;|$)]+)/) || [])[1] || ''
+    const requestObj = httpFetch('https://music.163.com/weapi/resource/comments/reply', {
+      method: 'post',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
+        origin: 'https://music.163.com',
+        Referer: 'https://music.163.com',
+        cookie,
+      },
+      form: weapi({
+        threadId,
+        content,
+        commentId,
+        csrf_token: csrfToken,
+      }),
+    })
+    try {
+      const { body, statusCode } = await requestObj.promise
+      if (statusCode != 200 || body.code !== 200) throw new Error(body.message || '回复评论失败')
+      return body
+    } catch (error) {
+      if (retryNum < 2) return this.replyComment({ songmid }, commentId, content, retryNum + 1)
+      throw error
+    }
+  },
+
+  async deleteComment({ songmid }, commentId, retryNum = 0) {
+    const cookie = appSetting['common.wy_cookie']
+    if (!cookie) return Promise.reject(new Error('请先登录网易云'))
+    const threadId = 'R_SO_4_' + songmid
+    const csrfToken = (cookie.match(/_csrf=([^(;|$)]+)/) || [])[1] || ''
+    const requestObj = httpFetch('https://music.163.com/weapi/resource/comments/delete', {
+      method: 'post',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
+        origin: 'https://music.163.com',
+        Referer: 'https://music.163.com',
+        cookie,
+      },
+      form: weapi({
+        threadId,
+        commentId,
+        csrf_token: csrfToken,
+      }),
+    })
+    try {
+      const { body, statusCode } = await requestObj.promise
+      if (statusCode != 200 || body.code !== 200) throw new Error(body.message || '删除评论失败')
+      return body
+    } catch (error) {
+      if (retryNum < 2) return this.deleteComment({ songmid }, commentId, retryNum + 1)
+      throw error
+    }
+  },
+
+  async likeComment({ songmid }, commentId, isLike = true, retryNum = 0) {
+    const cookie = appSetting['common.wy_cookie']
+    if (!cookie) return Promise.reject(new Error('请先登录网易云'))
+    const threadId = 'R_SO_4_' + songmid
+    const csrfToken = (cookie.match(/_csrf=([^(;|$)]+)/) || [])[1] || ''
+    const requestObj = httpFetch(`https://music.163.com/weapi/v1/comment/${isLike ? 'like' : 'unlike'}`, {
+      method: 'post',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
+        origin: 'https://music.163.com',
+        Referer: 'https://music.163.com',
+        cookie,
+      },
+      form: weapi({
+        threadId,
+        commentId,
+        csrf_token: csrfToken,
+      }),
+    })
+    try {
+      const { body, statusCode } = await requestObj.promise
+      if (statusCode != 200 || body.code !== 200) throw new Error(body.message || '操作失败')
+      return body
+    } catch (error) {
+      if (retryNum < 2) return this.likeComment({ songmid }, commentId, isLike, retryNum + 1)
+      throw error
+    }
   },
 }

@@ -9,8 +9,8 @@ const afterPack = require('./build-after-pack')
 * @see https://www.electron.build/configuration/configuration
 */
 const options = {
-  appId: 'cn.toside.music.desktop',
-  productName: 'lx-music-desktop',
+  appId: 'cn.lwk0.lxneteasemusic.desktop',
+  productName: 'LX-N Music',
   beforePack,
   afterPack,
   protocols: {
@@ -41,6 +41,9 @@ const options = {
   asar: {
     smartUnpack: false,
   },
+  // 默认行为：由 electron-builder 自动重建原生模块；当环境无 Visual Studio 时可通过 SKIP_NPM_REBUILD=1 跳过
+  npmRebuild: !process.env.SKIP_NPM_REBUILD,
+  buildDependenciesFromSource: false,
   extraResources: [
     './licenses',
   ],
@@ -59,7 +62,7 @@ const options = {
 const winOptions = {
   win: {
     icon: './resources/icons/icon.ico',
-    legalTrademarks: 'lyswhut',
+    legalTrademarks: 'lwk0',
     // artifactName: '${productName}-v${version}-${env.ARCH}-${env.TARGET}.${ext}',
   },
   nsis: {
@@ -68,7 +71,15 @@ const winOptions = {
     allowToChangeInstallationDirectory: true,
     // differentialPackage: true,
     license: './licenses/license.rtf',
-    shortcutName: 'LX Music',
+    shortcutName: 'LX-N Music',
+  },
+  // MSIX 打包（需 Windows 10 SDK 的 MakeAppx.exe 与代码签名证书）
+  msix: {
+    certificateFile: process.env.MSIX_CERT_FILE || './cer/lwk-sign.pfx',
+    certificatePassword: process.env.MSIX_CERT_PASSWORD || '123456',
+    publisher: 'CN=lwk0',
+    identityName: 'lx-netease-music-desktop',
+    displayName: 'LX-N Music',
   },
 }
 /**
@@ -201,6 +212,12 @@ const createTarget = {
         winOptions.artifactName = `\${productName}-v\${version}-${arch}-portable.\${ext}`
         return {
           buildOptions: { win: ['portable'] },
+          options: winOptions,
+        }
+      case 'msix':
+        winOptions.artifactName = `\${productName}-v\${version}-${arch}-msix.\${ext}`
+        return {
+          buildOptions: { win: ['msix'] },
           options: winOptions,
         }
       default: throw new Error('Unknown package type: ' + packageType)

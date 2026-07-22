@@ -8,7 +8,10 @@
         <table>
           <thead>
             <tr>
-              <th class="num" style="width: 5%;">#</th>
+              <th class="num" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+                <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 739.96 763.59" space="preserve"><use xlink:href="#icon-album" /></svg></template>
+                <template v-else>#</template>
+              </th>
               <th class="nobreak">{{ $t('music_name') }}</th>
               <th class="nobreak" style="width: 20%;">{{ $t('download__progress') }}</th>
               <th class="nobreak" style="width: 22%;">{{ $t('download__status') }}</th>
@@ -35,6 +38,7 @@
                     <use xlink:href="#icon-play-outline" />
                   </svg>
                 </div>
+                <img v-else-if="isShowCover && item.metadata.musicInfo.meta?.picUrl && !failedCovers.has(item.metadata.musicInfo.meta.picUrl)" :src="item.metadata.musicInfo.meta.picUrl" :class="$style.coverImg" @error="handleCoverError">
                 <div v-else class="num">{{ index + 1 }}</div>
               </transition>
             </div>
@@ -70,7 +74,7 @@
 <script>
 // import { checkPath, openDirInExplorer, openUrl } from '@common/utils/electron'
 
-import { ref } from '@common/utils/vueTools'
+import { ref, computed } from '@common/utils/vueTools'
 import useListInfo from './useListInfo'
 import useList from './useList'
 import useTab from './useTab'
@@ -79,7 +83,7 @@ import usePlay from './usePlay'
 import useTaskActions from './useTaskActions'
 import useMusicAdd from './useMusicAdd'
 import { downloadStatus } from '@renderer/store/download/state'
-import { appSetting } from '@renderer/store/setting'
+import { appSetting, updateSetting } from '@renderer/store/setting'
 import { formatMusicName } from '@renderer/utils'
 
 export default {
@@ -87,6 +91,15 @@ export default {
   setup() {
     const listRef = ref()
     const { tabs, activeTab } = useTab()
+    const isShowCover = computed(() => appSetting['list.isShowCover'])
+    const failedCovers = ref(new Set())
+    const handleCoverError = (event) => {
+      const target = event.target
+      if (target?.src) failedCovers.value.add(target.src)
+    }
+    const toggleCoverShow = () => {
+      updateSetting({ 'list.isShowCover': !appSetting['list.isShowCover'] })
+    }
 
     const {
       rightClickSelectedIndex,
@@ -221,6 +234,11 @@ export default {
       listItemHeight,
       playTaskId,
 
+      isShowCover,
+      failedCovers,
+      handleCoverError,
+      toggleCoverShow,
+
       isShowListAdd,
       isShowListAddMultiple,
       selectedAddMusicInfo,
@@ -278,6 +296,21 @@ export default {
 
   color: var(--color-button-font);
   opacity: .7;
+}
+.coverImg {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 5px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+  display: block;
+}
+.headerIcon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  fill: var(--color-button-font);
+  transform: translate(8px, 18px);
 }
 
 .content {

@@ -105,14 +105,16 @@ export default {
 
 .btns {
   line-height: 1.2;
+  display: flex;
+  align-items: center;
 
   button {
     background-color: transparent;
     border: none;
     border-radius: @form-radius;
-    margin-right: 5px;
+    margin-right: 3px;
     cursor: pointer;
-    padding: 4px 7px;
+    padding: 2px 5px;
     color: var(--color-button-font);
     outline: none;
     transition: background-color 0.2s ease;
@@ -122,7 +124,7 @@ export default {
     }
 
     svg {
-      height: 16px;
+      height: 14px;
     }
 
     &:hover {

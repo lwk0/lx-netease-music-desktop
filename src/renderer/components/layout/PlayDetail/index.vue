@@ -7,17 +7,28 @@ transition(enter-active-class="animated slideInRight" leave-active-class="animat
     ControlBtnsLeftHeader(v-if="appSetting['common.controlBtnPosition'] == 'left'")
     ControlBtnsRightHeader(v-else)
     div(:class="[$style.main, {[$style.showComment]: isShowPlayComment}]")
-      div.left(:class="$style.left")
-        //- div(:class="$style.info")
-        div(:class="$style.info")
-          img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
-          div.description(:class="['scroll', $style.description]")
-            p {{ $t('player__music_name') }}{{ musicInfo.name }}
-            p {{ $t('player__music_singer') }}{{ musicInfo.singer }}
-            p(v-if="musicInfo.album") {{ $t('player__music_album') }}{{ musicInfo.album }}
+      div(:class="$style.leftColumn")
+        div.left(:class="$style.left")
+          //- div(:class="$style.info")
+          div(:class="$style.info")
+            div(:class="[$style.cover, { [$style.playing]: isPlay, [$style.vinyl]: isVinyl }]")
+              img(v-if="musicInfo.pic" :class="[$style.img, { [$style.vinylImg]: isVinyl }]" :src="musicInfo.pic")
+            div.description(:class="['scroll', $style.description]")
+              p {{ $t('player__music_name') }}{{ musicInfo.name }}
+              p
+                span(:class="$style.label") {{ $t('player__music_singer') }}
+                template(v-if="artistList.length")
+                  span(v-for="(a, i) in artistList" :key="a.id" :class="$style.link" @click="goArtist(a.id)")
+                    | {{ a.name }}
+                    span(v-if="i < artistList.length - 1") {{ ' / ' }}
+                span(v-else) {{ musicInfo.singer }}
+              p(v-if="musicInfo.album")
+                span(:class="$style.label") {{ $t('player__music_album') }}
+                span(v-if="albumId" :class="$style.link" @click="goAlbum(albumId)") {{ musicInfo.album }}
+                span(v-else) {{ musicInfo.album }}
 
-      transition(enter-active-class="animated fadeIn" leave-active-class="animated fadeOut")
-        LyricPlayer(v-if="visibled")
+        transition(enter-active-class="animated fadeIn" leave-active-class="animated fadeOut")
+          LyricPlayer(v-if="visibled")
       music-comment(v-if="visibled" :class="$style.comment" :show="isShowPlayComment" :music-info="playMusicInfo.musicInfo" @close="hideComment")
     transition(enter-active-class="animated fadeIn" leave-active-class="animated fadeOut")
       play-bar(v-if="visibled")
@@ -27,13 +38,15 @@ transition(enter-active-class="animated slideInRight" leave-active-class="animat
 
 
 <script>
-import { ref, watch } from '@common/utils/vueTools'
+import { ref, watch, computed } from '@common/utils/vueTools'
+import { useRouter } from '@common/utils/vueRouter'
 import { isFullscreen } from '@renderer/store'
 import {
   isShowPlayerDetail,
   isShowPlayComment,
   musicInfo,
   playMusicInfo,
+  isPlay,
 } from '@renderer/store/player/state'
 import {
   setShowPlayerDetail,
@@ -60,6 +73,35 @@ export default {
   },
   setup() {
     const visibled = ref(false)
+    const router = useRouter()
+
+    const artistList = computed(() => {
+      const m = playMusicInfo.musicInfo
+      if (!m) return []
+      // 网易云等在线歌曲的歌手/专辑信息位于 meta 或顶层字段
+      const artists = m.meta?.artists ?? m.artists
+      if (Array.isArray(artists) && artists.length) {
+        return artists.map(a => ({ id: a.id, name: a.name })).filter(a => a.id != null)
+      }
+      return []
+    })
+    const albumId = computed(() => {
+      const m = playMusicInfo.musicInfo
+      if (!m) return null
+      return m.meta?.albumId ?? m.albumId ?? null
+    })
+    const isVinyl = computed(() => appSetting['playDetail.coverEffect'] === 'vinyl')
+
+    const goArtist = (artistId) => {
+      const source = playMusicInfo.musicInfo?.source ?? 'wy'
+      setShowPlayerDetail(false)
+      void router.push({ path: '/artist/detail', query: { source, id: String(artistId) } })
+    }
+    const goAlbum = (albumIdVal) => {
+      const source = playMusicInfo.musicInfo?.source ?? 'wy'
+      setShowPlayerDetail(false)
+      void router.push({ path: '/album/detail', query: { source, id: String(albumIdVal) } })
+    }
 
     let clickTime = 0
 
@@ -104,6 +146,12 @@ export default {
       isShowPlayerDetail,
       isShowPlayComment,
       musicInfo,
+      isPlay,
+      artistList,
+      albumId,
+      isVinyl,
+      goArtist,
+      goAlbum,
       hide,
       handleContextMenu,
       hideComment,
@@ -208,24 +256,54 @@ export default {
   margin: 0 30px;
   position: relative;
 
+  .leftColumn {
+    flex: 0 0 100%;
+    display: flex;
+    flex-flow: row nowrap;
+    overflow: hidden;
+    transition: flex-basis @transition-normal;
+    min-width: 0;
+  }
+
   &.showComment {
-    :global {
-      .left {
-        flex-basis: 18%;
-        .description p {
-          font-size: 12px;
-        }
+    .leftColumn {
+      flex: 0 0 35%;
+      flex-flow: column nowrap;
+    }
+
+    .left {
+      flex: 0 0 auto;
+      width: 100%;
+      max-width: none;
+      padding: 13px 13px 0;
+
+      .info {
+        max-width: 100%;
       }
-      .right {
-        flex-basis: 30%;
-        .lyricSelectContent {
-          font-size: 14px;
-        }
+
+      .cover {
+        max-width: 220px;
+        align-self: center;
       }
-      .comment {
-        opacity: 1;
-        transform: scaleX(1);
+
+      .description {
+        display: none;
       }
+    }
+
+    :global(.right) {
+      flex: 1 1 auto;
+      width: 100%;
+      .lyricSelectContent {
+        font-size: 14px;
+      }
+    }
+
+    .comment {
+      width: 65%;
+      margin-left: 0;
+      opacity: 1;
+      transform: scaleX(1);
     }
   }
 }
@@ -243,16 +321,85 @@ export default {
   display: flex;
   flex-flow: column nowrap;
   justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
   max-width: 300px;
   min-height: 0;
 }
 .img {
-  max-width: 100%;
-  max-height: 80%;
-  min-width: 100%;
-  box-shadow: 0 0 6px var(--color-primary-alpha-500);
-  border-radius: 6px;
-  opacity: .8;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: @radius-border;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, .25);
+
+  &.vinylImg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 62%;
+    height: 62%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, .45);
+    opacity: .95;
+  }
+}
+.cover {
+  position: relative;
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 1 / 1;
+  border-radius: @radius-border;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, .2);
+
+  &.vinyl {
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, #1c1c1c 0 17%, #0d0d0d 17% 100%);
+    box-shadow: 0 0 10px var(--color-primary-alpha-500), 0 0 0 8px rgba(0, 0, 0, .12);
+    animation: coverSpin 22s linear infinite;
+    animation-play-state: paused;
+    // 黑胶纹路
+    &:before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: repeating-radial-gradient(circle at center, rgba(255, 255, 255, .045) 0 2px, transparent 2px 7px);
+      pointer-events: none;
+    }
+    // 中心孔
+    &:after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: var(--color-content-background);
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, .55);
+      z-index: 1;
+    }
+    &.playing {
+      animation-play-state: running;
+    }
+  }
+}
+@keyframes coverSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .description {
   max-width: 300px;
@@ -263,6 +410,22 @@ export default {
     line-height: 1.5;
     font-size: 14px;
     overflow-wrap: break-word;
+    pointer-events: auto;
+  }
+  .label {
+    color: var(--color-font-label);
+    margin-right: 2px;
+  }
+  .link {
+    display: inline;
+    color: var(--color-primary);
+    cursor: pointer;
+    pointer-events: auto;
+    transition: opacity @transition-fast;
+    &:hover {
+      opacity: .8;
+      text-decoration: underline;
+    }
   }
 }
 

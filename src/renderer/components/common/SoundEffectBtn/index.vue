@@ -15,6 +15,7 @@
       </div>
       <div :class="['scroll', $style.row]">
         <BiquadFilter />
+        <PlaybackRate />
       </div>
     </div>
     <p v-if="showTip" :class="$style.tip">{{ $t('player__sound_effect_features_tip') }}</p>
@@ -23,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from '@common/utils/vueTools'
+import { ref, watch, onMounted, onBeforeUnmount } from '@common/utils/vueTools'
 // import useNextTogglePlay from '@renderer/utils/compositions/useNextTogglePlay'
 // import useToggleDesktopLyric from '@renderer/utils/compositions/useToggleDesktopLyric'
 // import { musicInfo, playMusicInfo } from '@renderer/store/player/state'
@@ -34,6 +35,7 @@ import BiquadFilter from './BiquadFilter.vue'
 import AudioPanner from './AudioPanner.vue'
 import AudioConvolution from './AudioConvolution.vue'
 import PitchShifter from './PitchShifter.vue'
+import PlaybackRate from './PlaybackRate.vue'
 import { appSetting } from '@renderer/store/setting'
 
 defineProps({
@@ -49,6 +51,17 @@ const showTip = ref(false)
 
 watch(visible, (visible) => {
   if (visible) showTip.value = appSetting['player.mediaDeviceId'] != 'default'
+})
+
+const handleShowSoundEffect = () => {
+  visible.value = true
+}
+
+onMounted(() => {
+  window.app_event.on('showSoundEffect', handleShowSoundEffect)
+})
+onBeforeUnmount(() => {
+  window.app_event.off('showSoundEffect', handleShowSoundEffect)
 })
 
 

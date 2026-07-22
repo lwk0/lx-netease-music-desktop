@@ -84,6 +84,16 @@ declare global {
       'common.showChangeLog': boolean
 
       /**
+       * 网易云音乐 Cookie（登录凭证）
+       */
+      'common.wy_cookie': string
+
+      /**
+       * SerpApi 密钥（网易云搜索增强）
+       */
+      'common.wy_serpapi_key': string
+
+      /**
        * 启动时自动播放歌曲
        */
       'player.startupAutoPlay': boolean
@@ -91,7 +101,7 @@ declare global {
       /**
        * 切歌模式
        */
-      'player.togglePlayMethod': 'listLoop' | 'random' | 'list' | 'singleLoop' | 'none'
+      'player.togglePlayMethod': 'listLoop' | 'random' | 'list' | 'singleLoop' | 'heartbeat' | 'none'
 
       /**
        * 优先播放的音质
@@ -300,6 +310,11 @@ declare global {
       'playDetail.isShowLyricProgressSetting': boolean
 
       /**
+       * 播放详情页-封面效果（original：原版封面，vinyl：黑胶旋转封面）
+       */
+      'playDetail.coverEffect': 'original' | 'vinyl'
+
+      /**
        * 播放详情页-歌词字体大小
        */
       'playDetail.style.fontSize': number
@@ -313,6 +328,21 @@ declare global {
        * 播放详情页-是否延迟桌面歌词滚动
        */
       'playDetail.isDelayScroll': boolean
+
+      /**
+       * 歌手详情页-是否显示背景图
+       */
+      'artistDetail.isShowBackground': boolean
+
+      /**
+       * 歌手详情页-背景图模糊程度（px，0 为不模糊）
+       */
+      'artistDetail.backgroundBlur': number
+
+      /**
+       * 歌手详情页-背景图透明度（0-1）
+       */
+      'artistDetail.backgroundOpacity': number
 
 
       /**
@@ -496,6 +526,21 @@ declare global {
       'list.actionButtonsVisible': boolean
 
       /**
+       * 列表第一列是否显示歌曲封面（开启后替代序号）
+       */
+      'list.isShowCover': boolean
+
+      /**
+       * 是否启用列表列自定义控件（列宽、文字对齐）
+       */
+      'list.columnCustomizationEnabled': boolean
+
+      /**
+       * 列表列自定义配置（JSON 字符串，含 widths 与 aligns）
+       */
+      'list.columnConfig': string
+
+      /**
        * 是否启用下载功能
        */
       'download.enable': boolean
@@ -609,6 +654,16 @@ declare global {
        * 软件启动时是否自动聚焦搜索框
        */
       'search.isFocusSearchBox': boolean
+
+      /**
+       * 搜索框位置：center 居中，left 居左
+       */
+      'search.searchBoxAlign': 'center' | 'left'
+
+      /**
+       * 搜索框样式：rounded 圆角，original 原版
+       */
+      'search.searchBoxStyle': 'rounded' | 'original'
 
       /**
        * 是否启用代理

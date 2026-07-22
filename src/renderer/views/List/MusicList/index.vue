@@ -4,7 +4,10 @@
       <table>
         <thead>
           <tr v-if="actionButtonsVisible">
-            <th class="num" style="width: 5%;">#</th>
+            <th class="num" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+              <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 739.96 763.59" space="preserve"><use xlink:href="#icon-album" /></svg></template>
+              <template v-else>#</template>
+            </th>
             <th class="nobreak">{{ $t('music_name') }}</th>
             <th class="nobreak" style="width: 22%;">{{ $t('music_singer') }}</th>
             <th class="nobreak" style="width: 22%;">{{ $t('music_album') }}</th>
@@ -12,7 +15,10 @@
             <th class="nobreak" style="width: 16%;">{{ $t('action') }}</th>
           </tr>
           <tr v-else>
-            <th class="num" style="width: 5%;">#</th>
+            <th class="num" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+              <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 739.96 763.59" space="preserve"><use xlink:href="#icon-album" /></svg></template>
+              <template v-else>#</template>
+            </th>
             <th class="nobreak">{{ $t('music_name') }}</th>
             <th class="nobreak" style="width: 25%;">{{ $t('music_singer') }}</th>
             <th class="nobreak" style="width: 28%;">{{ $t('music_album') }}</th>
@@ -33,12 +39,15 @@
         >
           <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
             <transition name="play-active">
+              <img v-if="isShowCover && item.meta?.picUrl && !failedCovers.has(item.meta.picUrl)" :src="item.meta.picUrl" :class="$style.coverImg" @error="handleCoverError">
+              <div v-else class="num">{{ index + 1 }}</div>
+            </transition>
+            <transition name="play-active">
               <div v-if="playerInfo.isPlayList && playerInfo.playIndex === index" :class="$style.playIcon">
                 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
                   <use xlink:href="#icon-play-outline" />
                 </svg>
               </div>
-              <div v-else class="num">{{ index + 1 }}</div>
             </transition>
           </div>
           <div class="list-item-cell auto name" :aria-label="item.name">
@@ -48,7 +57,8 @@
           <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 9%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
-          <div class="list-item-cell" style="flex: 0 0 16%; padding-left: 0; padding-right: 0;">
+          <div class="list-item-cell" :class="$style.actionCell" style="flex: 0 0 16%; padding-left: 0; padding-right: 0;">
+            <wy-like-btn :class="$style.likeBtn" :music-info="item" />
             <material-list-buttons :index="index" :download-btn="assertApiSupport(item.source) && item.source != 'local'" @btn-click="handleListBtnClick" />
           </div>
         </div>
@@ -65,12 +75,15 @@
         >
           <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
             <transition name="play-active">
+              <img v-if="isShowCover && item.meta?.picUrl && !failedCovers.has(item.meta.picUrl)" :src="item.meta.picUrl" :class="$style.coverImg" @error="handleCoverError">
+              <div v-else class="num">{{ index + 1 }}</div>
+            </transition>
+            <transition name="play-active">
               <div v-if="playerInfo.isPlayList && playerInfo.playIndex === index" :class="$style.playIcon">
                 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
                   <use xlink:href="#icon-play-outline" />
                 </svg>
               </div>
-              <div v-else class="num">{{ index + 1 }}</div>
             </transition>
           </div>
           <div class="list-item-cell auto name">
@@ -120,13 +133,16 @@ import useMusicActions from './useMusicActions'
 import useSearch from './useSearch'
 import useListScroll from './useListScroll'
 import useMusicToggle from './useMusicToggle'
-import { appSetting } from '@renderer/store/setting'
+import WyLikeBtn from '@renderer/components/common/WyLikeBtn.vue'
+import { ref, computed } from '@common/utils/vueTools'
+import { appSetting, updateSetting } from '@renderer/store/setting'
 export default {
   name: 'MusicList',
   components: {
     SearchList,
     MusicSortModal,
     MusicToggleModal,
+    WyLikeBtn,
   },
   props: {
     listId: {
@@ -137,7 +153,15 @@ export default {
   emits: ['show-menu'],
   setup(props, { emit }) {
     const actionButtonsVisible = appSetting['list.actionButtonsVisible']
-
+    const isShowCover = computed(() => appSetting['list.isShowCover'])
+    const failedCovers = ref(new Set())
+    const handleCoverError = (event) => {
+      const target = event.target
+      if (target?.src) failedCovers.value.add(target.src)
+    }
+    const toggleCoverShow = () => {
+      updateSetting({ 'list.isShowCover': !appSetting['list.isShowCover'] })
+    }
     let scrollIndex = null
     let isAnimation = false
     const handleRestoreScroll = (_scrollIndex, _isAnimation) => {
@@ -213,6 +237,7 @@ export default {
       handleOpenMusicDetail,
       handleCopyName,
       handleDislikeMusic,
+      handleLikeMusic,
       handleRemoveMusic,
     } = useMusicActions({ props, list, removeAllSelect, selectedList })
 
@@ -237,6 +262,7 @@ export default {
       handleOpenMusicDetail,
       handleCopyName,
       handleDislikeMusic,
+      handleLikeMusic,
       handleRemoveMusic,
     })
 
@@ -350,6 +376,10 @@ export default {
       handleRestoreScroll,
 
       actionButtonsVisible,
+      isShowCover,
+      failedCovers,
+      handleCoverError,
+      toggleCoverShow,
 
       isShowMusicToggleModal,
       selectedToggleMusicInfo,
@@ -406,6 +436,21 @@ export default {
   color: var(--color-button-font);
   opacity: .7;
 }
+.coverImg {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 5px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+  display: block;
+}
+.headerIcon {
+  display: block;
+  width: 30px;
+  height: 30px;
+  fill: var(--color-button-font);
+  transform: translate(8px, 18px);
+}
 .content {
   min-height: 0;
   font-size: 14px;
@@ -426,6 +471,18 @@ export default {
     font-size: 24px;
     color: var(--color-font-label);
   }
+}
+
+.actionCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.likeBtn {
+  width: 17px;
+  height: 17px;
 }
 
 </style>

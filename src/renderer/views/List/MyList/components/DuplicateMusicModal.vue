@@ -8,7 +8,10 @@
       :item-height="listItemHeight" container-class="scroll" content-class="list"
     >
       <div :class="$style.listItem">
-        <div :class="$style.num">{{ item.index + 1 }}</div>
+        <div :class="$style.num">
+          <img v-if="isShowCover && item.musicInfo.meta?.picUrl && !failedCovers.has(item.musicInfo.meta.picUrl)" :src="item.musicInfo.meta.picUrl" :class="$style.coverImg" @error="handleCoverError">
+          <template v-else>{{ item.index + 1 }}</template>
+        </div>
         <div :class="$style.textContent">
           <h3 :class="$style.text" :aria-label="`${item.musicInfo.name} - ${item.musicInfo.singer}`">{{ item.musicInfo.name }} - {{ item.musicInfo.singer }}</h3>
           <h3 v-if="item.musicInfo.meta.albumName" :class="[$style.text, $style.albumName]" :aria-label="item.musicInfo.meta.albumName">{{ item.musicInfo.meta.albumName }}</h3>
@@ -60,6 +63,12 @@ export default {
   setup(props) {
     const t = useI18n()
     const duplicateList = ref([])
+    const isShowCover = computed(() => appSetting['list.isShowCover'])
+    const failedCovers = ref(new Set())
+    const handleCoverError = (event) => {
+      const target = event.target
+      if (target?.src) failedCovers.value.add(target.src)
+    }
     const listItemHeight = computed(() => {
       return Math.ceil((isFullscreen.value ? getFontSizeWithScreen() : appSetting['common.fontSize']) * 3.2)
     })
@@ -105,6 +114,9 @@ export default {
       handleRemove,
       handlePlay,
       listName,
+      isShowCover,
+      failedCovers,
+      handleCoverError,
     }
   },
 }
@@ -163,6 +175,17 @@ export default {
   width: 30px;
   text-align: center;
   color: var(--color-font-label);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.coverImg {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.15);
+  display: block;
 }
 
 .textContent {

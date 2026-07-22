@@ -12,13 +12,14 @@ import {
   setPlayListId,
   removePlayedList,
 } from '@renderer/store/player/action'
-import { appSetting } from '@renderer/store/setting'
+import { appSetting, setTogglePlayMode } from '@renderer/store/setting'
+import { LIST_IDS } from '@common/constants'
 import { getMusicUrl, getPicPath, getLyricInfo } from '../music/index'
 import { filterList } from './utils'
 import { requestMsg } from '@renderer/utils/message'
 import { getRandom } from '@renderer/utils/index'
 import { addListMusics, removeListMusics } from '@renderer/store/list/action'
-import { loveList } from '@renderer/store/list/state'
+import { loveList, tempListMeta } from '@renderer/store/list/state'
 import { addDislikeInfo } from '@renderer/core/dislikeList'
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
@@ -239,6 +240,10 @@ const handlePlay = () => {
  */
 export const playListById = (listId: string, id: string) => {
   const prevListId = playInfo.playerListId
+  // 心动模式是临时播放模式，手动切换到非临时列表时应自动退出，恢复列表循环
+  if (appSetting['player.togglePlayMethod'] === 'heartbeat' && listId !== LIST_IDS.TEMP) {
+    setTogglePlayMode('listLoop')
+  }
   setPlayListId(listId)
   // pause()
   const musicInfo = getList(listId).find(m => m.id == id)
@@ -256,6 +261,11 @@ export const playListById = (listId: string, id: string) => {
  */
 export const playList = (listId: string, index: number) => {
   const prevListId = playInfo.playerListId
+  // 心动模式是临时播放模式，手动切换到其他列表（非心动专用列表 'heartbeat'）时应自动退出，恢复列表循环
+  if (appSetting['player.togglePlayMethod'] === 'heartbeat') {
+    const isHeartbeatList = listId !== LIST_IDS.TEMP || tempListMeta.id === 'heartbeat'
+    if (!isHeartbeatList) setTogglePlayMode('listLoop')
+  }
   setPlayListId(listId)
   // pause()
   setPlayMusicInfo(listId, getList(listId)[index])
@@ -342,6 +352,7 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
       nextIndex = getRandom(0, filteredList.length)
       break
     case 'list':
+    case 'heartbeat':
       nextIndex = playerIndex === filteredList.length - 1 ? -1 : playerIndex + 1
       break
     case 'singleLoop':
@@ -464,6 +475,7 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
       nextIndex = getRandom(0, filteredList.length)
       break
     case 'list':
+    case 'heartbeat':
       nextIndex = playerIndex === filteredList.length - 1 ? -1 : playerIndex + 1
       break
     case 'singleLoop':
@@ -559,6 +571,7 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
         break
       case 'listLoop':
       case 'list':
+      case 'heartbeat':
         nextIndex = playerIndex === 0 ? filteredList.length - 1 : playerIndex - 1
         break
       case 'singleLoop':

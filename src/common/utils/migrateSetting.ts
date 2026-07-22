@@ -112,6 +112,8 @@ export default (setting: any): Partial<LX.AppSetting> => {
     setting['search.isShowHotSearch'] = setting.search?.isShowHotSearch
     setting['search.isShowHistorySearch'] = setting.search?.isShowHistorySearch
     setting['search.isFocusSearchBox'] = setting.search?.isFocusSearchBox
+    setting['search.searchBoxAlign'] = setting.search?.searchBoxAlign
+    setting['search.searchBoxStyle'] = setting.search?.searchBoxStyle
 
     setting['network.proxy.enable'] = setting.network?.proxy?.enable
     setting['network.proxy.host'] = setting.network?.proxy?.host

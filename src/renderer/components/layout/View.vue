@@ -2,7 +2,9 @@
   <div :class="$style.view">
     <router-view v-slot="{ Component }">
       <!-- <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut"> -->
-      <component :is="Component" class="view-container" />
+      <keep-alive include="ArtistDetail">
+        <component :is="Component" class="view-container" />
+      </keep-alive>
       <!-- </transition> -->
     </router-view>
   </div>

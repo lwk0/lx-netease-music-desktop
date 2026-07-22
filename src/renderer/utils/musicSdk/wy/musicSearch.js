@@ -80,6 +80,7 @@ export default {
         name: item.name,
         albumName: item.al.name,
         albumId: item.al.id,
+        artists: item.ar,
         source: 'wy',
         interval: formatPlayTime(item.dt / 1000),
         songmid: item.id,

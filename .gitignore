@@ -71,3 +71,10 @@ publish/assets
 publish/utils/githubToken.js
 
 src/**/*-internal.js
+
+# Local code-signing certificates (contain private keys, never commit)
+cer/
+
+# Temp build artifacts
+_tmp_*.html
+_tmp_*.js

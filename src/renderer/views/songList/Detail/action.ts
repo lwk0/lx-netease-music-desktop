@@ -13,7 +13,8 @@ export const addSongListDetail = async(id: string, source: LX.OnlineSource, name
   // console.log(this.listDetail.info)
   // if (!this.listDetail.info.name) return
   const listId = getListId(id, source)
-  const targetList = userLists.find(l => l.sourceListId == listId)
+  const newId = `${source}_${toMD5(listId)}`
+  const targetList = userLists.find(l => l.sourceListId == listId || l.id == newId)
   if (targetList) {
     const confirm = await dialog.confirm({
       message: window.i18n.t('duplicate_list_tip', { name: targetList.name }),
@@ -26,13 +27,17 @@ export const addSongListDetail = async(id: string, source: LX.OnlineSource, name
   }
 
   const list = await getListDetailAll(id, source)
-  await createUserList({
-    name,
-    id: `${source}_${toMD5(listId)}`,
-    list,
-    source,
-    sourceListId: id,
-  })
+  try {
+    await createUserList({
+      name,
+      id: newId,
+      list,
+      source,
+      sourceListId: listId,
+    })
+  } catch (err) {
+    console.error('Create user list failed:', err)
+  }
 }
 
 export const playSongListDetail = async(id: string, source: LX.OnlineSource, list?: LX.Music.MusicInfoOnline[], index: number = 0) => {

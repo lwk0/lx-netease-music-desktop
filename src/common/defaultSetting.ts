@@ -22,6 +22,8 @@ const defaultSetting: LX.AppSetting = {
   'common.transparentWindow': !isMac,
   'common.tryAutoUpdate': true,
   'common.showChangeLog': true,
+  'common.wy_cookie': '',
+  'common.wy_serpapi_key': '',
 
   'player.startupAutoPlay': false,
   'player.togglePlayMethod': 'listLoop',
@@ -67,9 +69,14 @@ const defaultSetting: LX.AppSetting = {
 
   'playDetail.isZoomActiveLrc': false,
   'playDetail.isShowLyricProgressSetting': false,
+  'playDetail.coverEffect': 'original',
   'playDetail.style.fontSize': 140,
   'playDetail.style.align': 'center',
   'playDetail.isDelayScroll': true,
+
+  'artistDetail.isShowBackground': true,
+  'artistDetail.backgroundBlur': 12,
+  'artistDetail.backgroundOpacity': 0.15,
 
   'desktopLyric.enable': false,
   'desktopLyric.isLock': false,
@@ -107,8 +114,10 @@ const defaultSetting: LX.AppSetting = {
   'list.isShowSource': true,
   'list.isSaveScrollLocation': true,
   'list.addMusicLocationType': 'top',
-  'list.actionButtonsVisible': false,
-
+  'list.actionButtonsVisible': true,
+  'list.isShowCover': false,
+  'list.columnCustomizationEnabled': true,
+  'list.columnConfig': '{}',
   'download.enable': false,
   'download.isSavePathGroupByListName': false,
   'download.savePath': path.join(os.homedir(), 'Desktop'),
@@ -130,6 +139,8 @@ const defaultSetting: LX.AppSetting = {
   'search.isShowHotSearch': false,
   'search.isShowHistorySearch': false,
   'search.isFocusSearchBox': false,
+  'search.searchBoxAlign': 'center',
+  'search.searchBoxStyle': 'rounded',
 
   'network.proxy.enable': false,
   'network.proxy.host': '',
