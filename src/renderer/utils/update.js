@@ -8,12 +8,12 @@ const name = pkg.name
 
 const address = [
   [`https://raw.githubusercontent.com/${author}/${name}/master/publish/version.json`, 'direct'],
-  ['https://registry.npmjs.org/lx-music-desktop-version-info/latest', 'npm'],
+  ['https://registry.npmjs.org/lx-netease-music-desktop-version-info/latest', 'npm'],
   [`https://cdn.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
   [`https://fastly.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
   [`https://gcore.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  ['https://registry.npmmirror.com/lx-music-desktop-version-info/latest', 'npm'],
-  ['https://gitee.com/lyswhut/lx-music-desktop-versions/raw/master/version.json', 'direct'],
+  ['https://registry.npmmirror.com/lx-netease-music-desktop-version-info/latest', 'npm'],
+  ['https://gitee.com/lwk0/lx-netease-music-desktop-versions/raw/master/version.json', 'direct'],
   ['http://cdn.stsky.cn/lx-music/desktop/version.json', 'direct'],
 ]
 

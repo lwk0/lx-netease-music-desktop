@@ -50,8 +50,8 @@ const options = {
   publish: [
     {
       provider: 'github',
-      owner: 'lyswhut',
-      repo: 'lx-music-desktop',
+      owner: 'lwk0',
+      repo: 'lx-netease-music-desktop',
     },
   ],
 }
@@ -63,7 +63,20 @@ const winOptions = {
   win: {
     icon: './resources/icons/icon.ico',
     legalTrademarks: 'lwk0',
+    // 代码签名证书（同时用于 NSIS 安装包与 APPX 包签名），密码 123456，可用环境变量覆盖
+    certificateFile: process.env.MSIX_CERT_FILE || './cer/lwk-sign.pfx',
+    certificatePassword: process.env.MSIX_CERT_PASSWORD || '123456',
     // artifactName: '${productName}-v${version}-${env.ARCH}-${env.TARGET}.${ext}',
+  },
+  // APPX / MSIX 打包
+  // 注意：electron-builder 26.x 已移除独立的 msix 目标，仅保留 appx 目标，
+  // 其产出的 .appx 容器在封装格式上与 MSIX 一致（可改名 .msix 或配合 Windows 10 SDK 的 MakeAppx 进一步处理）。
+  // 需要本机安装 Windows 10 SDK（MakeAppx.exe / SignTool.exe 在 PATH 中）。
+  appx: {
+    // publisher 不填：electron-builder 会自动从签名证书的 Subject 派生，保证与证书完全一致
+    identityName: 'lx-netease-music-desktop',
+    displayName: 'LX-N Music',
+    publisherDisplayName: 'lwk0',
   },
   nsis: {
     oneClick: false,
@@ -73,14 +86,6 @@ const winOptions = {
     license: './licenses/license.rtf',
     shortcutName: 'LX-N Music',
   },
-  // MSIX 打包（需 Windows 10 SDK 的 MakeAppx.exe 与代码签名证书）
-  msix: {
-    certificateFile: process.env.MSIX_CERT_FILE || './cer/lwk-sign.pfx',
-    certificatePassword: process.env.MSIX_CERT_PASSWORD || '123456',
-    publisher: 'CN=lwk0',
-    identityName: 'lx-netease-music-desktop',
-    displayName: 'LX-N Music',
-  },
 }
 /**
  * @type {import('electron-builder').Configuration}
@@ -88,7 +93,7 @@ const winOptions = {
  */
 const linuxOptions = {
   linux: {
-    maintainer: 'lyswhut <lyswhut@qq.com>',
+    maintainer: 'lwk0',
     // artifactName: '${productName}-${version}.${env.ARCH}.${ext}',
     icon: './resources/icons',
     category: 'Utility;AudioVideo;Audio;Player;Music;',
@@ -215,9 +220,10 @@ const createTarget = {
           options: winOptions,
         }
       case 'msix':
+        // electron-builder 26.x 已无独立 msix 目标，使用 appx 目标产出 MSIX 兼容的 .appx 容器
         winOptions.artifactName = `\${productName}-v\${version}-${arch}-msix.\${ext}`
         return {
-          buildOptions: { win: ['msix'] },
+          buildOptions: { win: ['appx'] },
           options: winOptions,
         }
       default: throw new Error('Unknown package type: ' + packageType)
