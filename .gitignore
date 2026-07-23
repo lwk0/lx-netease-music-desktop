@@ -78,3 +78,4 @@ cer/
 # Temp build artifacts
 _tmp_*.html
 _tmp_*.js
+.git-rewrite/

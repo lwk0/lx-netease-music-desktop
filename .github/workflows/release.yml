@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 env:
   IS_CI: 'true'
@@ -14,7 +15,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Check out git repository
-  #       uses: actions/checkout@v6
+  #       uses: actions/checkout@v4
 
   #     - name: Install Node.js
   #       uses: actions/setup-node@v4
@@ -46,7 +47,7 @@ jobs:
     # needs: CheckCode
     steps:
       - name: Check out git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Get npm cache directory
         shell: pwsh
@@ -59,6 +60,13 @@ jobs:
         env:
           NPM_CACHE: ${{ env.NPM_CACHE }}
         uses: ./.github/actions/setup
+
+      - name: Inject code signing cert (optional)
+        if: ${{ secrets.CODESIGN_PFX != '' }}
+        shell: pwsh
+        run: |
+          $bytes = [System.Convert]::FromBase64String("${{ secrets.CODESIGN_PFX }}")
+          [System.IO.File]::WriteAllBytes("./cer/lwk-sign.pfx", $bytes)
 
       - name: Build src code
         run: |
@@ -87,7 +95,7 @@ jobs:
     # needs: CheckCode
     steps:
       - name: Check out git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Get npm cache directory
         shell: pwsh
@@ -135,7 +143,7 @@ jobs:
     # needs: CheckCode
     steps:
       - name: Check out git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install python3 setuptools
         run: brew install python-setuptools
@@ -178,7 +186,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools
 
       - name: Check out git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Get npm cache directory
         shell: bash

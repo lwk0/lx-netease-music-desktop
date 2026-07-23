@@ -157,6 +157,14 @@ const winOptions = {
     shortcutName: 'LX-N Music',
   },
 }
+
+// CI 环境（如 GitHub Actions）默认没有代码签名证书（cer/lwk-sign.pfx 已被 .gitignore 排除），
+// 此时不要启用 Windows 签名，否则 customCodeSign 会因找不到证书而让打包失败。
+// 只有证书文件存在时才保留 signtoolOptions；也可通过 CODESIGN_PFX secret 在 CI 上注入证书后自动生效。
+const winCertFile = process.env.MSIX_CERT_FILE || './cer/lwk-sign.pfx'
+if (!fs.existsSync(winCertFile)) {
+  delete winOptions.win.signtoolOptions
+}
 /**
  * @type {import('electron-builder').Configuration}
  * @see https://www.electron.build/configuration/configuration
