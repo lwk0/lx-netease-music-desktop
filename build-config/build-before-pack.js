@@ -45,9 +45,12 @@ const replaceQrcDecodeLib = async(electronNodeAbi, platform, arch) => {
   const filePath = path.join(__dirname, `./lib/qrc_decode_electron-v${electronNodeAbi}-${qrc_decode_fileNameMap[platform][arch]}.node`)
   const targetPath = path.join(__dirname, '../build/Release/qrc_decode.node')
   const targetDir = path.dirname(targetPath)
-  if (fs.existsSync(targetDir)) await fsPromises.unlink(targetPath).catch(_ => _)
-  else await fsPromises.mkdir(targetDir, { recursive: true })
-  await fsPromises.copyFile(filePath, targetPath)
+  // 目标已存在则跳过（同一 Electron ABI 的预编译内容一致），避免覆盖被杀软锁住的文件导致 EPERM
+  if (!fs.existsSync(targetPath)) {
+    if (fs.existsSync(targetDir)) await fsPromises.unlink(targetPath).catch(_ => _)
+    else await fsPromises.mkdir(targetDir, { recursive: true })
+    await fsPromises.copyFile(filePath, targetPath)
+  }
 }
 
 

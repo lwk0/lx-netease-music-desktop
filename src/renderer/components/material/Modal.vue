@@ -212,12 +212,15 @@ export default {
         this.modalCount = ++modalCount
         this.showModal = true
         void nextTick(() => {
-          const node = this.$refs.dom_container.parentNode
-          if (!node.classList.contains('show-modal')) {
-            node.classList.add('show-modal')
-            this.isAddedClass = true
-          }
           this.showContent = true
+          const container = this.$refs.dom_container
+          if (container) {
+            const node = container.parentNode
+            if (node && !node.classList.contains('show-modal')) {
+              node.classList.add('show-modal')
+              this.isAddedClass = true
+            }
+          }
         })
       } else {
         if (modalCount > 0) this.modalCount = --modalCount

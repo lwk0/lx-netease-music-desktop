@@ -63,6 +63,10 @@ typings/
 
 
 build
+build_bak*/
+release_artifacts*/
+release_artifacts_old/
+msix_assets_check/
 
 dist
 

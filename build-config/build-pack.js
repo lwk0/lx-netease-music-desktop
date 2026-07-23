@@ -50,6 +50,19 @@ function customCodeSign(configuration, packager) {
   }
   const isWin = process.platform === 'win32'
   let args = configuration.computeSignToolArgs(isWin)
+  // 新版 Windows SDK 的 signtool 必须显式指定文件摘要算法，否则报
+  // "No file digest algorithm specified"。electron-builder 26.x 的
+  // computeSignToolArgs 在某些配置下不会带 /fd，这里防御性补齐。
+  if (!args.includes('/fd')) {
+    const trIndex = args.indexOf('/tr')
+    // 放在时间戳服务器参数之前（/fd 必须先于 /tr 生效），其余情况放在文件参数之前
+    const insertAt = trIndex > -1 ? trIndex : args.length - 1
+    args.splice(insertAt, 0, '/fd', 'SHA256')
+    // 若带 RFC3161 时间戳，补充时间戳自身的摘要算法
+    if (trIndex > -1 && !args.includes('/td')) {
+      args.splice(args.length - 1, 0, '/td', 'SHA256')
+    }
+  }
   // 防御性剥离时间戳参数（部分 electron-builder 版本在离线判断上有差异）
   if (process.env.ELECTRON_BUILDER_OFFLINE === 'true' || process.env.LX_STRIP_TS) {
     args = args.filter((a, i) => {
@@ -89,9 +102,10 @@ const options = {
     'node_modules/better-sqlite3/lib',
     'node_modules/better-sqlite3/package.json',
     'node_modules/better-sqlite3/build/Release/better_sqlite3.node',
-    'node_modules/electron-font-manager/index.js',
-    'node_modules/electron-font-manager/package.json',
-    'node_modules/electron-font-manager/build/Release/font_manager.node',
+    // 本地测试临时移除：electron-font-manager 未安装（fontManage.ts 已改用 font-list）
+    // 'node_modules/electron-font-manager/index.js',
+    // 'node_modules/electron-font-manager/package.json',
+    // 'node_modules/electron-font-manager/build/Release/font_manager.node',
     'node_modules/node-gyp-build',
     'node_modules/bufferutil',
     'node_modules/utf-8-validate',
@@ -101,6 +115,8 @@ const options = {
   asar: {
     smartUnpack: false,
   },
+  // 显式解包所有原生模块（.node），否则它们会被打进 app.asar 导致运行时 dlopen 失败
+  asarUnpack: ['**/*.node'],
   // 默认行为：由 electron-builder 自动重建原生模块；当环境无 Visual Studio 时可通过 SKIP_NPM_REBUILD=1 跳过
   npmRebuild: !process.env.SKIP_NPM_REBUILD,
   buildDependenciesFromSource: false,
