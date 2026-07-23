@@ -157,7 +157,7 @@ jobs:
 
       - name: Prepare win7 undici env
         run: |
-          npm install undici@5
+          npm install undici@5 --no-save
           Set-Content -Path .\src\common\utils\request.ts -Value "export * from './request_node16'"
 
       - name: Build src code
@@ -169,11 +169,14 @@ jobs:
 
       - name: Prepare win7 electron env
         run: |
-          npm install electron@22
-          pip.exe install setuptools
+          npm install electron@22 --no-save
+          python -m pip install setuptools
+          node -e "const e=require('electron/package.json'); console.log('Electron win7 version:', e.version); console.log('ABI:', process.versions.modules)"
 
       - name: Rebuild native modules for Electron 22
-        run: npx electron-builder install-app-deps
+        run: |
+          Write-Output "Rebuilding native modules for Electron 22 (ABI 113)"
+          npx --no-install electron-builder install-app-deps
 
       - name: Release win7 package
         run: |
