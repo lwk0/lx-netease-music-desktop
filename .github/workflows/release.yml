@@ -62,11 +62,17 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Inject code signing cert (optional)
-        if: ${{ secrets.CODESIGN_PFX != '' }}
         shell: pwsh
+        env:
+          CODESIGN_PFX: ${{ secrets.CODESIGN_PFX }}
         run: |
-          $bytes = [System.Convert]::FromBase64String("${{ secrets.CODESIGN_PFX }}")
-          [System.IO.File]::WriteAllBytes("./cer/lwk-sign.pfx", $bytes)
+          if ($env:CODESIGN_PFX) {
+            $bytes = [System.Convert]::FromBase64String($env:CODESIGN_PFX)
+            [System.IO.File]::WriteAllBytes("./cer/lwk-sign.pfx", $bytes)
+            Write-Output "Certificate injected."
+          } else {
+            Write-Output "No CODESIGN_PFX secret found, skip signing cert injection."
+          }
 
       - name: Build src code
         run: |
