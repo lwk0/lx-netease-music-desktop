@@ -1,6 +1,12 @@
 name: Setup
 description: Setup Node Env
 
+inputs:
+  ignore-scripts:
+    description: 'Run npm ci with --ignore-scripts'
+    required: false
+    default: 'false'
+
 runs:
   using: composite
   steps:
@@ -24,5 +30,5 @@ runs:
           ${{ runner.os }}-npm-cache-
 
     - name: Install dependencies
-      run: npm ci
+      run: npm ci ${{ inputs.ignore-scripts == 'true' && '--ignore-scripts' || '' }}
       shell: bash

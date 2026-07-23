@@ -43,7 +43,7 @@ jobs:
 
   Windows:
     name: Windows
-    runs-on: windows-latest
+    runs-on: windows-2022
     # needs: CheckCode
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,6 +52,7 @@ jobs:
       ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
       GYP_MSVS_VERSION: 2022
       npm_config_msvs_version: 2022
+      npm_config_build_from_source: false
     steps:
       - name: Check out git repository
         uses: actions/checkout@v4
@@ -63,10 +64,18 @@ jobs:
       - name: Show Env
         run: echo "${{ env.NPM_CACHE }}"
 
+      - name: Configure node-gyp
+        shell: pwsh
+        run: |
+          npm config set msvs_version $env:GYP_MSVS_VERSION
+          npm config set python "$((Get-Command python).Source)"
+
       - name: Setup Node Env
         env:
           NPM_CACHE: ${{ env.NPM_CACHE }}
         uses: ./.github/actions/setup
+        with:
+          ignore-scripts: true
 
       - name: Inject code signing cert (optional)
         shell: pwsh
@@ -86,6 +95,9 @@ jobs:
           git status --porcelain
           npm run build
 
+      - name: Rebuild native modules for Electron
+        run: npx electron-builder install-app-deps
+
       - name: Release package
         run: |
           npm run publish:win:7z:x64
@@ -104,15 +116,16 @@ jobs:
 
   Windows_7:
     name: Windows_7
-    runs-on: windows-latest
+    runs-on: windows-2019
     # needs: CheckCode
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
       ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
-      GYP_MSVS_VERSION: 2022
-      npm_config_msvs_version: 2022
+      GYP_MSVS_VERSION: 2019
+      npm_config_msvs_version: 2019
+      npm_config_build_from_source: false
     steps:
       - name: Check out git repository
         uses: actions/checkout@v4
@@ -121,10 +134,18 @@ jobs:
         shell: pwsh
         run: echo "NPM_CACHE=$(npm config get cache)" >> $env:GITHUB_ENV
 
+      - name: Configure node-gyp
+        shell: pwsh
+        run: |
+          npm config set msvs_version $env:GYP_MSVS_VERSION
+          npm config set python "$((Get-Command python).Source)"
+
       - name: Setup Node Env
         env:
           NPM_CACHE: ${{ env.NPM_CACHE }}
         uses: ./.github/actions/setup
+        with:
+          ignore-scripts: true
 
       - name: Prepare win7 undici env
         run: |
@@ -142,6 +163,9 @@ jobs:
         run: |
           npm install electron@22
           pip.exe install setuptools
+
+      - name: Rebuild native modules for Electron 22
+        run: npx electron-builder install-app-deps
 
       - name: Release win7 package
         run: |
