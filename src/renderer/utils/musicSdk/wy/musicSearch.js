@@ -117,4 +117,39 @@ export default {
       // return result.data
     })
   },
+
+  searchSinger(str, page = 1, limit = 30, retryNum = 0) {
+    if (++retryNum > 3) return Promise.reject(new Error('try max num'))
+    const searchRequest = eapiRequest('/api/cloudsearch/pc', {
+      s: str,
+      type: 100,
+      limit,
+      total: page === 1,
+      offset: limit * (page - 1),
+    })
+    return searchRequest.promise.then(({ body: result }) => {
+      if (!result || result.code !== 200) return this.searchSinger(str, page, limit, retryNum)
+      const list = this.handleSingerResult(result.result.artists)
+      const total = result.result.artistCount || 0
+      return {
+        list,
+        total,
+        allPage: total ? Math.ceil(total / limit) : 0,
+        limit,
+        source: 'wy',
+      }
+    })
+  },
+
+  handleSingerResult(rawList) {
+    if (!rawList) return []
+    return rawList.map(item => ({
+      id: String(item.id),
+      name: item.name,
+      picUrl: item.picUrl,
+      alias: item.alias,
+      albumSize: item.albumSize,
+      source: 'wy',
+    }))
+  },
 }

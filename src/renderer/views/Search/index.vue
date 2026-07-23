@@ -5,7 +5,8 @@
       <base-tab v-model="searchType" :list="searchTypes" @change="handleTypeChange" />
     </div>
     <div :class="$style.main">
-      <song-list-list v-if="searchType == 'songlist'" v-show="searchText" :page="page" :source-id="source" />
+      <singer-list v-if="searchType == 'singer'" v-show="searchText" :page="page" />
+      <song-list-list v-else-if="searchType == 'songlist'" v-show="searchText" :page="page" :source-id="source" />
       <music-list v-else v-show="searchText" :page="page" :source-id="source" />
       <blank-view :visible="!searchText" :source="source" />
     </div>
@@ -20,6 +21,7 @@ import { sources as _sources } from '@renderer/store/search/music'
 
 import MusicList from './MusicList/index.vue'
 import SongListList from './SongListList/index.vue'
+import SingerList from './SingerList/index.vue'
 import BlankView from './components/BlankView.vue'
 import { computed, ref } from '@common/utils/vueTools'
 import { sourceNames } from '@renderer/store'
@@ -37,7 +39,13 @@ const verifyQueryParams = async(to, from, next) => {
     const setting = await getSearchSetting()
     _source ??= setting.source
     _type ??= setting.type
+  }
 
+  if (_type == 'singer' && _source != 'wy') {
+    _source = 'wy'
+  }
+
+  if (_source == null || _type == null || (to.query.source != _source || to.query.type != _type)) {
     next({
       path: to.path,
       query: { ...to.query, source: _source, type: _type, page: _page },
@@ -61,6 +69,7 @@ export default {
   components: {
     MusicList,
     SongListList,
+    SingerList,
     BlankView,
   },
   beforeRouteEnter: verifyQueryParams,
@@ -76,30 +85,42 @@ export default {
       }
     })
     const handleSourceChange = (id) => {
+      const query = {
+        ...route.query,
+        source: id,
+        page: 1,
+      }
+      if (searchType.value == 'singer' && id != 'wy') {
+        query.type = 'music'
+      }
       void router.replace({
         path: route.path,
-        query: {
-          ...route.query,
-          source: id,
-          page: 1,
-        },
+        query,
       })
     }
 
     const searchTypes = computed(() => {
-      return [
+      const types = [
         { label: window.i18n.t('search__type_music'), id: 'music' },
         { label: window.i18n.t('search__type_songlist'), id: 'songlist' },
       ]
+      if (source.value == 'wy') {
+        types.push({ label: window.i18n.t('search__type_singer'), id: 'singer' })
+      }
+      return types
     })
     const handleTypeChange = (type) => {
+      const query = {
+        ...route.query,
+        type,
+        page: 1,
+      }
+      if (type == 'singer' && source.value != 'wy') {
+        query.source = 'wy'
+      }
       void router.replace({
         path: route.path,
-        query: {
-          ...route.query,
-          type,
-          page: 1,
-        },
+        query,
       })
     }
 
