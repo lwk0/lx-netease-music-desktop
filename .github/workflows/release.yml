@@ -67,8 +67,12 @@ jobs:
       - name: Configure node-gyp
         shell: pwsh
         run: |
-          npm config set msvs_version $env:GYP_MSVS_VERSION
-          npm config set python "$((Get-Command python).Source)"
+          Write-Output "GYP_MSVS_VERSION=$env:GYP_MSVS_VERSION"
+          Write-Output "npm_config_msvs_version=$env:npm_config_msvs_version"
+          Write-Output "Python source: $((Get-Command python -ErrorAction SilentlyContinue).Source)"
+          python --version
+          node --version
+          npm --version
 
       - name: Setup Node Env
         env:
@@ -137,8 +141,12 @@ jobs:
       - name: Configure node-gyp
         shell: pwsh
         run: |
-          npm config set msvs_version $env:GYP_MSVS_VERSION
-          npm config set python "$((Get-Command python).Source)"
+          Write-Output "GYP_MSVS_VERSION=$env:GYP_MSVS_VERSION"
+          Write-Output "npm_config_msvs_version=$env:npm_config_msvs_version"
+          Write-Output "Python source: $((Get-Command python -ErrorAction SilentlyContinue).Source)"
+          python --version
+          node --version
+          npm --version
 
       - name: Setup Node Env
         env:
