@@ -63,7 +63,13 @@ watch(() => props.source, async(source) => {
   // const source = (await getLeaderboardSetting()).source as LX.OnlineSource
   let tagInfo = tags[source]
   // console.log(await getTags(source))
-  if (tagInfo == null) setTags(tagInfo = await getTags(source), source)
+  try {
+    if (tagInfo == null) setTags(tagInfo = await getTags(source), source)
+  } catch (err) {
+    // 没网/接口异常时静默失败，避免控制台/UI 红框刷屏
+    console.warn('[TagList] load tags failed:', err?.message || err)
+    return
+  }
 
   list.splice(0, list.length, ...[{ name: window.i18n.t('songlist__tag_info_hot_tag'), list: [...tagInfo.hotTag] }, ...tagInfo.tags])
 }, {
@@ -85,9 +91,12 @@ const popupStyle = reactive({
 
 const setTagPopupWidth = () => {
   window.setTimeout(() => {
-    const dom_view = document.getElementById('view')
-    popupStyle.width = dom_view.clientWidth * 0.96 + 'px'
-    popupStyle.maxHeight = dom_view.clientHeight * 0.65 + 'px'
+    // #view 在 layout 组件上 id 不会渲染到 DOM，用 window 尺寸兜底，避免 null.clientWidth 崩溃
+    const w = window.innerWidth > 0 ? window.innerWidth : document.documentElement.clientWidth
+    const h = window.innerHeight > 0 ? window.innerHeight : document.documentElement.clientHeight
+    if (!w || !h) return
+    popupStyle.width = Math.max(320, w * 0.5) + 'px'
+    popupStyle.maxHeight = Math.max(150, h * 0.4) + 'px'
   }, 50)
 }
 

@@ -25,18 +25,23 @@ const route = useRoute()
 
 const getListData = async(source: LX.OnlineSource, tabId: string, sortId: string, page: number) => {
   // console.log(source, tabId, sortId, page)
-  await getAndSetList(source, tabId, sortId, page).then(() => {
-    if (listInfo.key == window.lx.songListInfo.songlistKey && window.lx.songListInfo.songlistPosition) {
-      void nextTick(() => {
-        list_ref.value?.scrollTo(window.lx.songListInfo.songlistPosition)
-      })
-    } else if (list_ref.value) {
-      window.lx.songListInfo.songlistKey = null
-      void nextTick(() => {
-        list_ref.value.scrollTo(0)
-      })
-    }
-  })
+  try {
+    await getAndSetList(source, tabId, sortId, page).then(() => {
+      if (listInfo.key == window.lx.songListInfo.songlistKey && window.lx.songListInfo.songlistPosition) {
+        void nextTick(() => {
+          list_ref.value?.scrollTo(window.lx.songListInfo.songlistPosition)
+        })
+      } else if (list_ref.value) {
+        window.lx.songListInfo.songlistKey = null
+        void nextTick(() => {
+          list_ref.value.scrollTo(0)
+        })
+      }
+    })
+  } catch (err) {
+    // 没网/接口异常时静默失败，避免控制台/UI 红框刷屏
+    console.warn('[ListView] load list failed:', (err as Error)?.message || err)
+  }
 }
 
 const togglePage = (page: number) => {
