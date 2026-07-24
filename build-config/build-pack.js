@@ -42,10 +42,15 @@ function findRealSignTool() {
 // 使用 Windows SDK 自带的 signtool；在 ELECTRON_BUILDER_OFFLINE=true 或 LX_STRIP_TS=1 时，
 // computeSignToolArgs 已不含时间戳参数（沙箱/离线环境无法访问时间戳服务器时必需）。
 function customCodeSign(configuration, packager) {
+  // 允许通过 SKIP_SIGN=1 跳过签名（用于无 Windows SDK 环境下产出未签名包）
+  if (process.env.SKIP_SIGN === '1') {
+    console.log('[customCodeSign] SKIP_SIGN=1，跳过签名')
+    return
+  }
   const real = findRealSignTool()
   if (!real) {
     throw new Error(
-      '[customCodeSign] 未找到 Windows SDK 的 signtool.exe，请安装 Windows 10/11 SDK，或通过 REAL_SIGNTOOL 环境变量指定'
+      '[customCodeSign] 未找到 Windows SDK 的 signtool.exe，请安装 Windows 10/11 SDK，或通过 REAL_SIGNTOOL 环境变量指定，或设置 SKIP_SIGN=1 跳过签名'
     )
   }
   const isWin = process.platform === 'win32'
