@@ -7,23 +7,51 @@ const builder = require('electron-builder')
 const beforePack = require('./build-before-pack')
 const afterPack = require('./build-after-pack')
 
+// 自签名证书无需时间戳；离线/代理环境下时间戳服务器不可达会导致 SignTool 失败。
+// 默认开启离线模式（剥离 /tr /td），如确需时间戳可显式设置 ELECTRON_BUILDER_OFFLINE=false。
+if (process.env.ELECTRON_BUILDER_OFFLINE == null) {
+  process.env.ELECTRON_BUILDER_OFFLINE = 'true'
+}
+
 // 定位 Windows SDK 自带的 signtool（electron-builder 内置的 2019 版 winCodeSign signtool
 // 在 Windows 11 上对 AppX 签名会报 "A required function is not present"）。
 function findRealSignTool() {
   if (process.env.REAL_SIGNTOOL && fs.existsSync(process.env.REAL_SIGNTOOL)) {
     return process.env.REAL_SIGNTOOL
   }
-  // 标准 Windows 10/11 SDK 安装路径
-  const kits = 'C:/Program Files (x86)/Windows Kits/10/bin'
-  if (fs.existsSync(kits)) {
-    const dirs = fs
-      .readdirSync(kits)
-      .filter((d) => /^10\./.test(d))
+  // 标准 Windows 10/11 SDK 自带的 signtool（D: 为用户手动安装位置，C: 为默认位置）。
+  // 必须优先于 electron-builder 内置的 winCodeSign signtool——
+  // 后者基于较旧的 Windows 10 SDK(2019)，在 Windows 11 上对 APPX 签名会报
+  // "A required function is not present"，而本机 SDK(10.0.28000) 可正常签名 APPX。
+  const kitRoots = [
+    'D:/Windows Kits/10/bin',
+    'C:/Program Files (x86)/Windows Kits/10/bin',
+  ]
+  for (const kits of kitRoots) {
+    if (fs.existsSync(kits)) {
+      const dirs = fs
+        .readdirSync(kits)
+        .filter((d) => /^10\./.test(d))
+        .sort()
+        .reverse()
+      for (const d of dirs) {
+        const p = path.join(kits, d, 'x64', 'signtool.exe')
+        if (fs.existsSync(p)) return p
+      }
+    }
+  }
+  // electron-builder 缓存的 winCodeSign（兜底，仅支持较旧环境；Windows 11 上签 APPX 会失败）
+  const winCodeSignCache = 'C:/Users/lwk/AppData/Local/electron-builder/Cache/winCodeSign'
+  if (fs.existsSync(winCodeSignCache)) {
+    const vers = fs.readdirSync(winCodeSignCache)
+      .filter((d) => d.startsWith('winCodeSign-'))
       .sort()
       .reverse()
-    for (const d of dirs) {
-      const p = path.join(kits, d, 'x64', 'signtool.exe')
-      if (fs.existsSync(p)) return p
+    for (const v of vers) {
+      for (const sub of ['windows-10/x64', 'windows-10/ia32', 'windows-6']) {
+        const p = path.join(winCodeSignCache, v, sub, 'signtool.exe')
+        if (fs.existsSync(p)) return p
+      }
     }
   }
   // NuGet microsoft.windows.sdk.buildtools（部分沙箱/CI 环境）
@@ -35,6 +63,9 @@ function findRealSignTool() {
       if (fs.existsSync(p)) return p
     }
   }
+  // ClickOnce SignTool（旧版，仅支持 PE 文件签名，不支持 APPX，放最后兜底 EXE）
+  const clickOnce = 'C:/Program Files (x86)/Microsoft SDKs/ClickOnce/SignTool/signtool.exe'
+  if (fs.existsSync(clickOnce)) return clickOnce
   return null
 }
 
@@ -146,7 +177,7 @@ const winOptions = {
     legalTrademarks: 'lwk0',
     // 代码签名证书（同时用于 NSIS 安装包与 APPX 包签名），密码 123456，可用环境变量覆盖
     signtoolOptions: {
-      certificateFile: process.env.MSIX_CERT_FILE || './cer/lwk-sign.pfx',
+      certificateFile: process.env.MSIX_CERT_FILE || 'D:/Users/lwk/Documents/cer证书/lwk-sign.pfx',
       certificatePassword: process.env.MSIX_CERT_PASSWORD || '123456',
       // 自定义签名函数：使用 Windows SDK 自带的 signtool（内置 2019 版在 Win11 上签 AppX 会报
       // "A required function is not present"）。构建时请设置 ELECTRON_BUILDER_OFFLINE=true 以跳过
@@ -160,9 +191,12 @@ const winOptions = {
   // 其产出的 .appx 容器在封装格式上与 MSIX 一致（可改名 .msix 或配合 Windows 10 SDK 的 MakeAppx 进一步处理）。
   // 需要本机安装 Windows 10 SDK（MakeAppx.exe / SignTool.exe 在 PATH 中）。
   appx: {
-    // publisher 必须与签名证书 Subject 严格一致（MakeAppx 校验 + SignTool 签名都依赖它）。
-    // 证书 Subject 为 C=CN, O=lwk, CN=lwk，必须按此顺序书写，否则 MakeAppx 报 DN 格式错误。
-    publisher: 'C=CN, O=lwk, CN=lwk',
+    // publisher 必须与签名证书 Subject 严格一致（MakeAppx 校验 + SignTool 签名都依赖它），
+    // 且 DN 各字段顺序必须与 Windows 报告的“规范主体名(canonical subject)”完全一致。
+    // 证书 ASN.1 编码顺序是 C=CN, O=lwk, CN=lwk，但 Windows 校验要求规范的 CN=...,O=...,C=... 顺序，
+    // 写成编码顺序会触发 Event 150(0x8007000B: publisher must match cert subject)，签名失败。
+    // 用 certutil -dump / Get-AuthenticodeSignature 看到的顺序才是正确写法：
+    publisher: 'CN=lwk, O=lwk, C=CN',
     identityName: 'lx-netease-music-desktop',
     // applicationId 必须是点分、字母开头、不含连字符（与 identityName 的连字符不兼容），故显式指定
     applicationId: 'lx.netease.music.desktop',
@@ -182,7 +216,7 @@ const winOptions = {
 // CI 环境（如 GitHub Actions）默认没有代码签名证书（cer/lwk-sign.pfx 已被 .gitignore 排除），
 // 此时不要启用 Windows 签名，否则 customCodeSign 会因找不到证书而让打包失败。
 // 只有证书文件存在时才保留 signtoolOptions；也可通过 CODESIGN_PFX secret 在 CI 上注入证书后自动生效。
-const winCertFile = process.env.MSIX_CERT_FILE || './cer/lwk-sign.pfx'
+const winCertFile = process.env.MSIX_CERT_FILE || 'D:/Users/lwk/Documents/cer证书/lwk-sign.pfx'
 if (!fs.existsSync(winCertFile)) {
   delete winOptions.win.signtoolOptions
 }
