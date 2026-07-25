@@ -2,9 +2,14 @@ name: Build
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g. v2.12.2)'
+        required: false
+        default: ''
 
 env:
   IS_CI: 'true'
