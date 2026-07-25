@@ -1,29 +1,6 @@
 import '@common/error'
 import { createApp } from 'vue'
 
-// dev 模式下兜底未处理的网络错误，避免 webpack-dev-server overlay 弹出红框刷屏
-if (process.env.NODE_ENV === 'development') {
-  window.addEventListener('unhandledrejection', (event) => {
-    const reason = event.reason
-    const msg = reason?.message ?? reason
-    if (typeof msg !== 'string') return
-    if (
-      msg.includes('无法连接到服务器') ||
-      msg.includes('请求超时') ||
-      msg.includes('接口无法访问') ||
-      msg.includes('请求异常') ||
-      msg.includes('服务器繁忙') ||
-      msg.includes('取消http请求') ||
-      /socket hang up/i.test(msg) ||
-      /network/i.test(msg) ||
-      /ENOTFOUND|ETIMEDOUT|ESOCKETTIMEDOUT|ECONNREFUSED|ECONNRESET/i.test(msg)
-    ) {
-      event.preventDefault()
-      console.warn('[dev] 忽略未处理网络错误:', msg)
-    }
-  })
-}
-
 import './core/globalData'
 
 import '@renderer/event'
@@ -52,6 +29,27 @@ import './worker'
 import { saveViewPrevState } from './utils/data'
 
 // sync(store, router)
+
+// 兜底未处理的网络错误，避免在页面弹出全局红框/白屏（dev webpack overlay 或生产环境未 catch 的 rejection）
+window.addEventListener('unhandledrejection', (event) => {
+  const reason = event.reason
+  const msg = reason?.message ?? reason
+  if (typeof msg !== 'string') return
+  if (
+    msg.includes('无法连接到服务器') ||
+    msg.includes('请求超时') ||
+    msg.includes('接口无法访问') ||
+    msg.includes('请求异常') ||
+    msg.includes('服务器繁忙') ||
+    msg.includes('取消http请求') ||
+    /socket hang up/i.test(msg) ||
+    /network/i.test(msg) ||
+    /ENOTFOUND|ETIMEDOUT|ESOCKETTIMEDOUT|ECONNREFUSED|ECONNRESET/i.test(msg)
+  ) {
+    event.preventDefault()
+    console.warn('[network] 忽略未处理网络错误:', msg)
+  }
+})
 
 router.afterEach((to) => {
   if (to.path != '/songList/detail') {

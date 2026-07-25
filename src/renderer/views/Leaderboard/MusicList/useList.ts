@@ -17,6 +17,9 @@ export default () => {
       setTimeout(() => {
         if (listRef.value) listRef.value.scrollToTop()
       })
+    }).catch((error: any) => {
+      // getAndSetListDetail 内部已设置 noItemLabel，这里只需吞掉未处理 rejection
+      console.warn('getAndSetListDetail failed:', error)
     })
   }
 

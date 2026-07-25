@@ -54,11 +54,29 @@ const replaceQrcDecodeLib = async(electronNodeAbi, platform, arch) => {
 }
 
 
+const copyAppxIcons = async() => {
+  const srcDir = path.join(__dirname, '../resources/appx')
+  const dstDir = path.join(__dirname, '../build/appx')
+  if (!fs.existsSync(srcDir)) return
+  if (!fs.existsSync(dstDir)) await fsPromises.mkdir(dstDir, { recursive: true })
+  const files = await fsPromises.readdir(srcDir)
+  for (const file of files) {
+    const src = path.join(srcDir, file)
+    const dst = path.join(dstDir, file)
+    const stat = await fsPromises.stat(src)
+    if (stat.isFile() && !fs.existsSync(dst)) {
+      await fsPromises.copyFile(src, dst)
+    }
+  }
+  console.log('copy appx icons...')
+}
+
 module.exports = async(context) => {
   const { electronPlatformName, arch } = context
   const electronVersion = context.packager?.info?._framework?.version ?? require('../package.json').devDependencies.electron.replace(/^[^\d]*?(\d+)/, '$1')
   const electronNodeAbi = nodeAbi.getAbi(electronVersion, 'electron')
   await replaceQrcDecodeLib(electronNodeAbi, electronPlatformName, arch)
+  if (electronPlatformName === 'win32') await copyAppxIcons()
   if (electronPlatformName !== 'linux' || process.env.FORCE) return
   const bindingFilePath = path.join(__dirname, '../node_modules/better-sqlite3/binding.gyp')
   const bindingBakFilePath = path.join(__dirname, '../node_modules/better-sqlite3/binding.gyp.bak')

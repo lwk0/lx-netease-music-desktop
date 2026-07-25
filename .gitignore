@@ -83,3 +83,6 @@ cer/
 _tmp_*.html
 _tmp_*.js
 .git-rewrite/
+
+# Visual Studio / IDE caches
+.vs/

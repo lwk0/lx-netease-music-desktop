@@ -80,10 +80,15 @@ const handleMenuClick = (action) => {
 
 watch(() => props.source, async(source) => {
   // const source = (await getLeaderboardSetting()).source as LX.OnlineSource
-  let boardList = boards[source]
-  if (boardList == null) setBoard(boardList = await getBoardsList(source), source)
-  list.splice(0, list.length, ...boardList.list)
-  if (!props.boardId && boardList.list.length) handleToggleList(boardList.list[0].id)
+  try {
+    let boardList = boards[source]
+    if (boardList == null) setBoard(boardList = await getBoardsList(source), source)
+    list.splice(0, list.length, ...boardList.list)
+    if (!props.boardId && boardList.list.length) handleToggleList(boardList.list[0].id)
+  } catch (error) {
+    console.warn('getBoardsList failed:', error)
+    list.splice(0, list.length)
+  }
 }, {
   immediate: true,
 })

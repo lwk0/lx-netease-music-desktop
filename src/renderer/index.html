@@ -15,21 +15,6 @@
   <div id="root" style="display: none;">
   </div>
   <script>
-    // 诊断：把渲染进程任何运行时错误显示到页面，避免白屏却看不到原因（定位后可删除）
-    window.addEventListener('error', (e) => {
-      const el = document.getElementById('root')
-      if (el) {
-        el.style.display = 'block'
-        el.innerHTML = '<pre style="color:#ff5555;padding:24px;white-space:pre-wrap;font-size:13px;">' + (e.error && e.error.stack ? e.error.stack : e.message) + '</pre>'
-      }
-    })
-    window.addEventListener('unhandledrejection', (e) => {
-      const el = document.getElementById('root')
-      if (el) {
-        el.style.display = 'block'
-        el.innerHTML = '<pre style="color:#ff5555;padding:24px;white-space:pre-wrap;font-size:13px;">[UnhandledRejection] ' + (e.reason && e.reason.stack ? e.reason.stack : e.reason) + '</pre>'
-      }
-    })
     const formatLang = (lang = 'en') => {
       if (lang === 'zh-cn') return 'zh-Hans'
       if (lang === 'zh-tw') return 'zh-Hant'
