@@ -1,6 +1,11 @@
 <template lang="pug">
 material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose")
-  main(v-if="versionInfo.isLatest" :class="$style.main")
+  main(v-if="versionInfo.status == 'checking' && !versionInfo.newVersion" :class="$style.main")
+    h2 {{ $t('setting__update_checking') }}
+    div(:class="$style.footer")
+      div(:class="$style.btns")
+        base-btn(:class="$style.btn" disabled) {{ $t('setting__update_checking') }}
+  main(v-else-if="versionInfo.isLatest" :class="$style.main")
     h2 🎉 已是最新版本 🎉
     div.scroll.select(:class="$style.info")
       div(:class="$style.current")

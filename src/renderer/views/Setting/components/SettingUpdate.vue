@@ -26,9 +26,9 @@ dd
         span {{ $t('setting__update_unknown_tip') }}
       .p(v-else-if="versionInfo.status != 'downloading'")
         span {{ $t('setting__update_new_version') }}
-      .p
-        base-btn.btn.gap-left(min @click="showUpdateModal") {{ $t('setting__update_open_version_modal_btn') }}
     .p.small(v-else-if="versionInfo.status =='checking'") {{ $t('setting__update_checking') }}
+    .p.gap-top
+      base-btn.btn(min @click="showUpdateModal") {{ $t('setting__update_open_version_modal_btn') }}
 </template>
 
 <script>
@@ -36,7 +36,7 @@ import { computed } from '@common/utils/vueTools'
 import { versionInfo } from '@renderer/store'
 import { dateFormat, sizeFormate } from '@common/utils/common'
 // import { openDirInExplorer, selectDir } from '@renderer/utils'
-import { openDevTools } from '@renderer/utils/ipc'
+import { openDevTools, checkUpdate } from '@renderer/utils/ipc'
 import { useI18n } from '@renderer/plugins/i18n'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 
@@ -73,6 +73,7 @@ export default {
     })
 
     const showUpdateModal = () => {
+      if (!versionInfo.newVersion) checkUpdate()
       versionInfo.showModal = true
     }
 
