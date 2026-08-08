@@ -5,23 +5,17 @@
     </div>
     <div :class="$style.content">
       <div class="thead" :class="$style.thead">
-        <table>
-          <thead>
-            <tr>
-              <th class="num" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-                <div :class="$style.headerNum">
-                  <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-cover" /></svg></template>
-                  <template v-else>#</template>
-                </div>
-              </th>
-              <th class="nobreak">{{ $t('music_name') }}</th>
-              <th class="nobreak" style="width: 20%;">{{ $t('download__progress') }}</th>
-              <th class="nobreak" style="width: 22%;">{{ $t('download__status') }}</th>
-              <th class="nobreak" style="width: 10%;">{{ $t('download__quality') }}</th>
-              <th class="nobreak" style="width: 13%;">{{ $t('action') }}</th>
-            </tr>
-          </thead>
-        </table>
+        <div :class="$style.headerRow">
+          <div :class="[$style.headerCell, $style.numCell]" style="flex: 0 0 5%;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+            <svg v-if="isShowCover" :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-cover" /></svg>
+            <span v-else>#</span>
+          </div>
+          <div :class="$style.headerCell" style="flex: auto;">{{ $t('music_name') }}</div>
+          <div :class="$style.headerCell" style="flex: 0 0 20%;">{{ $t('download__progress') }}</div>
+          <div :class="$style.headerCell" style="flex: 0 0 22%;">{{ $t('download__status') }}</div>
+          <div :class="$style.headerCell" style="flex: 0 0 10%;">{{ $t('download__quality') }}</div>
+          <div :class="$style.headerCell" style="flex: 0 0 13%;">{{ $t('action') }}</div>
+        </div>
       </div>
       <div v-if="list.length" ref="dom_listContent" :class="$style.content">
         <base-virtualized-list
@@ -307,11 +301,30 @@ export default {
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
   display: block;
 }
-.headerNum {
+.headerRow {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+}
+.headerCell {
+  flex: none;
+  padding: 0 6px;
+  box-sizing: border-box;
+  font-size: 12px;
+  color: var(--color-font-label);
+  line-height: 38px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.numCell {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 38px;
+  white-space: nowrap;
+  cursor: pointer;
+  flex: 0 0 5%;
+  color: var(--color-font-label);
 }
 .headerIcon {
   display: block;
