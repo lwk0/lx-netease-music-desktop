@@ -1,13 +1,25 @@
 <template>
   <div :class="$style.list">
+    <div :class="$style.listHeader">
+      <h3 :class="$style.listHeaderTitle">{{ currentListName }}</h3>
+      <div :class="$style.listHeaderBtns">
+        <button :class="$style.listHeaderBtn" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve">
+            <use :xlink:href="isShowCover ? '#icon-list' : '#icon-album'" />
+          </svg>
+        </button>
+        <button :class="$style.listHeaderBtn" :title="$t('list__search')" :aria-label="$t('list__search')" @click="handleShowSearch">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve">
+            <use xlink:href="#icon-search" />
+          </svg>
+        </button>
+      </div>
+    </div>
     <div class="thead">
       <table>
         <thead>
           <tr v-if="actionButtonsVisible">
-            <th class="num" :class="{ [$style.coverHeader]: isShowCover }" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-              <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="24" height="24" viewBox="0 0 425.2 425.2" preserveAspectRatio="xMidYMid meet" space="preserve" fill="currentColor"><path d="M20,371.91a20,20,0,0,1-20-20V20A20,20,0,0,1,20,0H333.91a20,20,0,0,1,0,40H40V351.91A20,20,0,0,1,20,371.91Z" /><path d="M405.2,425.2h-306a20,20,0,0,1-20-20V258a20,20,0,0,1,40,0V385.2h266V122h-214a20,20,0,1,1,0-40h234a20,20,0,0,1,20,20V405.2A20,20,0,0,1,405.2,425.2Z" /><path d="M259,326.69a18,18,0,0,1-18-18V165A18,18,0,0,1,277,165v143.6A18,18,0,0,1,259,326.69Z" /><path d="M317.24,241.35a18,18,0,0,1-12.76-5.29l-58.26-58.26a18,18,0,0,1,25.52-25.52L330,210.55a18,18,0,0,1-12.76,30.81Z" /><path d="M223.08,360.18A53.95,53.95,0,1,1,277,306.23,54,54,0,0,1,223.08,360.18Zm0-71.8a17.85,17.85,0,1,0,17.85,17.85A17.87,17.87,0,0,0,223.08,288.38Z" /></svg></template>
-              <template v-else>#</template>
-            </th>
+            <th class="num" style="width: 5%;">#</th>
             <th class="nobreak">{{ $t('music_name') }}</th>
             <th class="nobreak" style="width: 22%;">{{ $t('music_singer') }}</th>
             <th class="nobreak" style="width: 22%;">{{ $t('music_album') }}</th>
@@ -15,10 +27,7 @@
             <th class="nobreak" style="width: 16%;">{{ $t('action') }}</th>
           </tr>
           <tr v-else>
-            <th class="num" :class="{ [$style.coverHeader]: isShowCover }" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-              <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="24" height="24" viewBox="0 0 425.2 425.2" preserveAspectRatio="xMidYMid meet" space="preserve" fill="currentColor"><path d="M20,371.91a20,20,0,0,1-20-20V20A20,20,0,0,1,20,0H333.91a20,20,0,0,1,0,40H40V351.91A20,20,0,0,1,20,371.91Z" /><path d="M405.2,425.2h-306a20,20,0,0,1-20-20V258a20,20,0,0,1,40,0V385.2h266V122h-214a20,20,0,1,1,0-40h234a20,20,0,0,1,20,20V405.2A20,20,0,0,1,405.2,425.2Z" /><path d="M259,326.69a18,18,0,0,1-18-18V165A18,18,0,0,1,277,165v143.6A18,18,0,0,1,259,326.69Z" /><path d="M317.24,241.35a18,18,0,0,1-12.76-5.29l-58.26-58.26a18,18,0,0,1,25.52-25.52L330,210.55a18,18,0,0,1-12.76,30.81Z" /><path d="M223.08,360.18A53.95,53.95,0,1,1,277,306.23,54,54,0,0,1,223.08,360.18Zm0-71.8a17.85,17.85,0,1,0,17.85,17.85A17.87,17.87,0,0,0,223.08,288.38Z" /></svg></template>
-              <template v-else>#</template>
-            </th>
+            <th class="num" style="width: 5%;">#</th>
             <th class="nobreak">{{ $t('music_name') }}</th>
             <th class="nobreak" style="width: 25%;">{{ $t('music_singer') }}</th>
             <th class="nobreak" style="width: 28%;">{{ $t('music_album') }}</th>
@@ -136,6 +145,8 @@ import useMusicToggle from './useMusicToggle'
 import WyLikeBtn from '@renderer/components/common/WyLikeBtn.vue'
 import { ref, computed } from '@common/utils/vueTools'
 import { appSetting, updateSetting } from '@renderer/store/setting'
+import { useI18n } from '@renderer/plugins/i18n'
+import { defaultList, loveList, tempList, userLists } from '@renderer/store/list/state'
 export default {
   name: 'MusicList',
   components: {
@@ -152,8 +163,18 @@ export default {
   },
   emits: ['show-menu'],
   setup(props, { emit }) {
+    const t = useI18n()
     const actionButtonsVisible = appSetting['list.actionButtonsVisible']
     const isShowCover = computed(() => appSetting['list.isShowCover'])
+    const currentListName = computed(() => {
+      switch (props.listId) {
+        case defaultList.id: return t(defaultList.name)
+        case loveList.id: return t(loveList.name)
+        case tempList.id: return t(tempList.name)
+        default:
+          return userLists.find(l => l.id == props.listId)?.name ?? ''
+      }
+    })
     const failedCovers = ref(new Set())
     const handleCoverError = (event) => {
       const target = event.target
@@ -270,6 +291,7 @@ export default {
       isShowSearchBar,
       searchList,
       handleMusicSearchAction,
+      handleShowSearchBar,
     } = useSearch({
       setSelectedIndex,
       handlePlayMusic,
@@ -380,6 +402,8 @@ export default {
       failedCovers,
       handleCoverError,
       toggleCoverShow,
+      currentListName,
+      handleShowSearch: handleShowSearchBar,
 
       isShowMusicToggleModal,
       selectedToggleMusicInfo,
@@ -416,6 +440,50 @@ export default {
     }
   }
 }
+.listHeader {
+  position: relative;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  border-bottom: var(--color-list-header-border-bottom);
+  height: 38px;
+  padding-right: 5px;
+  flex: none;
+}
+.listHeaderTitle {
+  flex: auto;
+  font-size: 12px;
+  line-height: 38px;
+  padding: 0 10px;
+  .mixin-ellipsis-1();
+}
+.listHeaderBtns {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+.listHeaderBtn {
+  background: none;
+  height: 30px;
+  border: none;
+  outline: none;
+  border-radius: @radius-border;
+  cursor: pointer;
+  opacity: .45;
+  transition: opacity @transition-normal, background-color .2s ease;
+  color: var(--color-button-font);
+  padding: 2px 6px;
+  svg {
+    vertical-align: bottom;
+  }
+  &:active {
+    opacity: 1 !important;
+  }
+  &:hover {
+    opacity: 1 !important;
+    background-color: var(--color-button-background-hover);
+  }
+}
 .num {
   height: 100%;
   display: flex;
@@ -443,16 +511,6 @@ export default {
   border-radius: 5px;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
   display: block;
-}
-.coverHeader {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-}
-.headerIcon {
-  display: block;
-  fill: var(--color-button-font);
-  flex: none;
 }
 .content {
   min-height: 0;

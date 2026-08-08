@@ -34,5 +34,6 @@ export default ({ setSelectedIndex, handlePlayMusic, listRef }) => {
     isShowSearchBar,
     searchList,
     handleMusicSearchAction,
+    handleShowSearchBar,
   }
 }
