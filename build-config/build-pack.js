@@ -411,6 +411,12 @@ const createTarget = {
           buildOptions: { mac: ['dmg'] },
           options: macOptions,
         }
+      case 'zip':
+        macOptions.artifactName = `\${productName}-\${version}-${arch}.\${ext}`
+        return {
+          buildOptions: { mac: ['zip'] },
+          options: macOptions,
+        }
       default: throw new Error('Unknown package type: ' + packageType)
     }
   },

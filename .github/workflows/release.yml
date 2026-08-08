@@ -207,7 +207,9 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-      ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
+      # npmmirror 的 electron-builder-binaries/release-dmg-builder 目录为空，
+      # 打包 dmg 需从 GitHub 官方 releases 下载 release-dmg-builder
+      ELECTRON_BUILDER_BINARIES_MIRROR: https://github.com/electron-userland/electron-builder-binaries/releases/download/
     steps:
       - name: Check out git repository
         uses: actions/checkout@v4
@@ -233,8 +235,10 @@ jobs:
 
       - name: Release package
         run: |
-          npm run publish:mac:dmg
-          npm run publish:mac:dmg:arm64
+          # dmg 需要 release-dmg-builder，但 electron-builder 26.9.0 请求的 2.8.0 在 GitHub/npm 镜像均不存在，
+          # 先改用 zip 产出 Mac 包；dmg 脚本保留供本机有环境时手动使用。
+          npm run publish:mac:zip
+          npm run publish:mac:zip:arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BT_TOKEN: ${{ secrets.BT_TOKEN }}
@@ -242,7 +246,7 @@ jobs:
       - name: Generate file MD5
         run: |
           cd build
-          md5 *.dmg
+          md5 *.zip
 
   Linux:
     name: Linux
