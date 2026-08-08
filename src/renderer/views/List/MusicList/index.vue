@@ -5,7 +5,7 @@
       <div :class="$style.listHeaderBtns">
         <button :class="$style.listHeaderBtn" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve">
-            <use :xlink:href="isShowCover ? '#icon-album' : '#icon-list'" />
+            <use :xlink:href="isShowCover ? '#icon-cover' : '#icon-list'" />
           </svg>
         </button>
         <button :class="$style.listHeaderBtn" :title="$t('list__search')" :aria-label="$t('list__search')" @click="handleShowSearch">
