@@ -1,6 +1,6 @@
 {
   "name": "lx-netease-music-desktop",
-  "version": "2.12.3",
+  "version": "1.0.0",
   "description": "LX Music 桌面版网易云增强魔改版（基于 lx-music-desktop）",
   "main": "./dist/main.js",
   "scripts": {

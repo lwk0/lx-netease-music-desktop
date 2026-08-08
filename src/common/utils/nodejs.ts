@@ -203,7 +203,17 @@ export const copyFile = async(sourcePath: string, distPath: string) => {
 }
 
 export const moveFile = async(sourcePath: string, distPath: string) => {
-  return fs.promises.rename(sourcePath, distPath)
+  try {
+    await fs.promises.rename(sourcePath, distPath)
+  } catch (err: any) {
+    // 跨设备（EXDEV）时降级为 copy + unlink，兼容数据目录被 junction 到其他盘符的场景
+    if (err?.code === 'EXDEV') {
+      await fs.promises.copyFile(sourcePath, distPath)
+      await fs.promises.unlink(sourcePath)
+      return
+    }
+    throw err
+  }
 }
 
 export const getAddress = (): string[] => {

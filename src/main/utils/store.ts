@@ -8,6 +8,22 @@ type Stores = Record<string, Store>
 
 const stores: Stores = {}
 
+// 跨设备安全的同步重命名：rename 在跨盘（EXDEV: cross-device link not permitted）时
+// 降级为 copy + unlink。APPX 等场景下数据目录可能被 junction/符号链接重定向到其他盘符，
+// 普通的 rename 会失败导致初始化中断，这里做容错。
+const renameFileSync = (srcPath: string, dstPath: string) => {
+  try {
+    fs.renameSync(srcPath, dstPath)
+  } catch (err: any) {
+    if (err?.code === 'EXDEV') {
+      fs.copyFileSync(srcPath, dstPath)
+      fs.unlinkSync(srcPath)
+    } else {
+      throw err
+    }
+  }
+}
+
 
 class Store {
   private readonly filePath: string
@@ -24,7 +40,7 @@ class Store {
         fs.writeFileSync(tempPath, JSON.stringify(this.store, null, '\t'), 'utf8')
       } else throw err
     }
-    fs.renameSync(tempPath, this.filePath)
+    renameFileSync(tempPath, this.filePath)
   }
 
   constructor(filePath: string, clearInvalidConfig: boolean = false) {
@@ -89,7 +105,7 @@ export default (name: string, isIgnoredError = true, isShowErrorAlert = true): S
 
 
     const backPath = storePath + '.bak'
-    fs.renameSync(storePath, backPath)
+    renameFileSync(storePath, backPath)
     if (isShowErrorAlert) {
       dialog.showMessageBoxSync({
         type: 'error',
