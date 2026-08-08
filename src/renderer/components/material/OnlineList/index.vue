@@ -207,8 +207,8 @@ export default {
     const failedCovers = ref(new Set())
     const handleCoverError = (event) => {
       const target = event.target
-      if (target?.src) {
-        failedCovers.value.add(target.src)
+      if (target?.src && !failedCovers.value.has(target.src)) {
+        failedCovers.value = new Set([...failedCovers.value, target.src])
       }
     }
     const toggleCoverShow = () => {
