@@ -8,9 +8,11 @@
         <table>
           <thead>
             <tr>
-              <th class="num" :class="$style.headerNum" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-                <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-cover" /></svg></template>
-                <template v-else>#</template>
+              <th class="num" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+                <div :class="$style.headerNum">
+                  <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-cover" /></svg></template>
+                  <template v-else>#</template>
+                </div>
               </th>
               <th class="nobreak">{{ $t('music_name') }}</th>
               <th class="nobreak" style="width: 20%;">{{ $t('download__progress') }}</th>
@@ -309,6 +311,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 38px;
 }
 .headerIcon {
   display: block;
