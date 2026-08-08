@@ -4,8 +4,8 @@
       <table>
         <thead>
           <tr v-if="actionButtonsVisible">
-            <th class="num" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-              <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 739.96 763.59" space="preserve"><use xlink:href="#icon-album" /></svg></template>
+            <th class="num" :class="{ [$style.coverHeader]: isShowCover }" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+              <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="24" height="24" viewBox="0 0 425.2 425.2" preserveAspectRatio="xMidYMid meet" space="preserve" fill="currentColor"><path d="M20,371.91a20,20,0,0,1-20-20V20A20,20,0,0,1,20,0H333.91a20,20,0,0,1,0,40H40V351.91A20,20,0,0,1,20,371.91Z" /><path d="M405.2,425.2h-306a20,20,0,0,1-20-20V258a20,20,0,0,1,40,0V385.2h266V122h-214a20,20,0,1,1,0-40h234a20,20,0,0,1,20,20V405.2A20,20,0,0,1,405.2,425.2Z" /><path d="M259,326.69a18,18,0,0,1-18-18V165A18,18,0,0,1,277,165v143.6A18,18,0,0,1,259,326.69Z" /><path d="M317.24,241.35a18,18,0,0,1-12.76-5.29l-58.26-58.26a18,18,0,0,1,25.52-25.52L330,210.55a18,18,0,0,1-12.76,30.81Z" /><path d="M223.08,360.18A53.95,53.95,0,1,1,277,306.23,54,54,0,0,1,223.08,360.18Zm0-71.8a17.85,17.85,0,1,0,17.85,17.85A17.87,17.87,0,0,0,223.08,288.38Z" /></svg></template>
               <template v-else>#</template>
             </th>
             <th class="nobreak">{{ $t('music_name') }}</th>
@@ -15,8 +15,8 @@
             <th class="nobreak" style="width: 16%;">{{ $t('action') }}</th>
           </tr>
           <tr v-else>
-            <th class="num" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-              <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 739.96 763.59" space="preserve"><use xlink:href="#icon-album" /></svg></template>
+            <th class="num" :class="{ [$style.coverHeader]: isShowCover }" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+              <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="24" height="24" viewBox="0 0 425.2 425.2" preserveAspectRatio="xMidYMid meet" space="preserve" fill="currentColor"><path d="M20,371.91a20,20,0,0,1-20-20V20A20,20,0,0,1,20,0H333.91a20,20,0,0,1,0,40H40V351.91A20,20,0,0,1,20,371.91Z" /><path d="M405.2,425.2h-306a20,20,0,0,1-20-20V258a20,20,0,0,1,40,0V385.2h266V122h-214a20,20,0,1,1,0-40h234a20,20,0,0,1,20,20V405.2A20,20,0,0,1,405.2,425.2Z" /><path d="M259,326.69a18,18,0,0,1-18-18V165A18,18,0,0,1,277,165v143.6A18,18,0,0,1,259,326.69Z" /><path d="M317.24,241.35a18,18,0,0,1-12.76-5.29l-58.26-58.26a18,18,0,0,1,25.52-25.52L330,210.55a18,18,0,0,1-12.76,30.81Z" /><path d="M223.08,360.18A53.95,53.95,0,1,1,277,306.23,54,54,0,0,1,223.08,360.18Zm0-71.8a17.85,17.85,0,1,0,17.85,17.85A17.87,17.87,0,0,0,223.08,288.38Z" /></svg></template>
               <template v-else>#</template>
             </th>
             <th class="nobreak">{{ $t('music_name') }}</th>
@@ -444,12 +444,15 @@ export default {
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
   display: block;
 }
+.coverHeader {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
 .headerIcon {
   display: block;
-  width: 30px;
-  height: 30px;
   fill: var(--color-button-font);
-  transform: translate(8px, 18px);
+  flex: none;
 }
 .content {
   min-height: 0;
