@@ -48,6 +48,7 @@ jobs:
 
   Windows:
     name: Windows
+    if: false  # Windows 包由本机签名后手动上传，避免与签名包重名冲突
     runs-on: windows-2022
     # needs: CheckCode
     env:
@@ -125,6 +126,7 @@ jobs:
 
   Windows_7:
     name: Windows_7
+    if: false  # Windows 包由本机签名后手动上传，避免与签名包重名冲突
     runs-on: windows-2019
     # needs: CheckCode
     env:
