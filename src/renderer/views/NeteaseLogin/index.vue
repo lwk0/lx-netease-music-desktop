@@ -93,18 +93,38 @@ export default {
       goBack()
     }
 
-    // 网易云登录页真实 DOM（已从源码确认）：顶部导航 #g_top(.m-top)、红色二级导航 #g_nav(.m-subnav)、底部 .g-ft/.m-ft
-    const cleanupCss = '#g_top,.m-top,#g_nav,.m-subnav,.g-ft,.m-ft,footer,.m-download,.m-banner,.m-hd,.g-hd,[class*="download"]{display:none !important;}#login-wrapper,.g-bd{padding-top:0 !important;margin-top:0 !important;}body,html{padding-top:0 !important;margin-top:0 !important;background:#fff !important;}::-webkit-scrollbar{width:6px;height:6px;background-color:transparent;}::-webkit-scrollbar-track{background-color:rgba(113,191,150,0.2);border-radius:3px;}::-webkit-scrollbar-thumb{border-radius:3px;background-color:rgba(77,175,124,0.4);}::-webkit-scrollbar-thumb:hover{background-color:rgba(77,175,124,0.6);}'
-    const cleanupJs = `(function(){
-      var sels=['#g_top','.m-top','#g_nav','.m-subnav','.g-ft','.m-ft','footer','.m-download','.m-banner','.m-hd','.g-hd','[class*="download"]'];
-      sels.forEach(function(sel){try{document.querySelectorAll(sel).forEach(function(n){n.remove();});}catch(e){}});
-      try{document.querySelectorAll('#login-wrapper,.g-bd').forEach(function(n){n.style.paddingTop='0';n.style.marginTop='0';});}catch(e){}
-      try{document.body.style.paddingTop='0';document.body.style.marginTop='0';}catch(e){}
-      var adRxp=/下载客户端|VIP歌曲免费听|下载APP|下载 app|下载应用/;
-      try{document.querySelectorAll('a,button,div,span,p,section,li').forEach(function(n){if(adRxp.test(n.textContent||''))n.remove();});}catch(e){}
-      var st=document.getElementById('lx-netease-login-cleanup');
-      if(!st){st=document.createElement('style');st.id='lx-netease-login-cleanup';st.textContent=${JSON.stringify(cleanupCss)};document.head.appendChild(st);}
-    })()`
+    // 网易云登录页清理：仅通过 CSS 隐藏顶部导航、底部、下载广告等干扰元素，
+    // 不再删除 DOM 或扫描全页文本，避免破坏手机号登录等动态加载内容。
+    const cleanupCss = [
+      '#g_top,.m-top,#g_nav,.m-subnav,.g-ft,.m-ft,footer,.m-download,.m-banner,.m-hd,.g-hd,.m-playbar{',
+      '  display:none !important;',
+      '}',
+      '#login-wrapper,.g-bd{',
+      '  padding-top:0 !important;',
+      '  margin-top:0 !important;',
+      '}',
+      'body,html{',
+      '  padding-top:0 !important;',
+      '  margin-top:0 !important;',
+      '  background:#fff !important;',
+      '}',
+      '::-webkit-scrollbar{',
+      '  width:6px;',
+      '  height:6px;',
+      '  background-color:transparent;',
+      '}',
+      '::-webkit-scrollbar-track{',
+      '  background-color:rgba(113,191,150,0.2);',
+      '  border-radius:3px;',
+      '}',
+      '::-webkit-scrollbar-thumb{',
+      '  border-radius:3px;',
+      '  background-color:rgba(77,175,124,0.4);',
+      '}',
+      '::-webkit-scrollbar-thumb:hover{',
+      '  background-color:rgba(77,175,124,0.6);',
+      '}',
+    ].join('')
 
     const injectCleanup = (webview) => {
       if (!webview) {
@@ -117,15 +137,8 @@ export default {
         }).catch((err) => {
           console.error('[LX] netease login insertCSS failed', err)
         })
-      }
-      if (typeof webview.executeJavaScript === 'function') {
-        void webview.executeJavaScript(cleanupJs, false).then(() => {
-          console.log('[LX] netease login cleanup js injected')
-        }).catch((err) => {
-          console.error('[LX] netease login executeJavaScript failed', err)
-        })
       } else {
-        console.log('[LX] netease webview has no insertCSS/executeJavaScript')
+        console.log('[LX] netease webview has no insertCSS')
       }
     }
 
@@ -137,18 +150,18 @@ export default {
       events.forEach((ev) => {
         webview.addEventListener(ev, () => { injectCleanup(webview) })
       })
-      // 轮询兜底：webview 异步初始化，事件可能已错过
+      // 轮询兜底：webview 异步初始化，事件可能已错过；只做少量 CSS 注入即可
       let n = 0
       const poll = () => {
-        if (n >= 40) return
+        if (n >= 5) return
         n++
         const wv = document.querySelector('webview')
-        if (wv && (typeof wv.insertCSS === 'function' || typeof wv.executeJavaScript === 'function')) {
+        if (wv && typeof wv.insertCSS === 'function') {
           injectCleanup(wv)
         }
-        setTimeout(poll, 500)
+        setTimeout(poll, 800)
       }
-      setTimeout(poll, 500)
+      setTimeout(poll, 800)
     })
 
     startWatching()
