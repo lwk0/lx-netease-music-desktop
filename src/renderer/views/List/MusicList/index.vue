@@ -1,40 +1,17 @@
 <template>
   <div :class="$style.list">
-    <div :class="$style.listHeader">
-      <h3 :class="$style.listHeaderTitle">{{ currentListName }}</h3>
-      <div :class="$style.listHeaderBtns">
-        <button :class="$style.listHeaderBtn" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve">
-            <use :xlink:href="isShowCover ? '#icon-cover' : '#icon-list'" />
-          </svg>
-        </button>
-        <button :class="$style.listHeaderBtn" :title="$t('list__search')" :aria-label="$t('list__search')" @click="handleShowSearch">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve">
-            <use xlink:href="#icon-search" />
-          </svg>
-        </button>
-      </div>
-    </div>
     <div class="thead">
-      <table>
-        <thead>
-          <tr v-if="actionButtonsVisible">
-            <th class="num" style="width: 5%;">#</th>
-            <th class="nobreak">{{ $t('music_name') }}</th>
-            <th class="nobreak" style="width: 22%;">{{ $t('music_singer') }}</th>
-            <th class="nobreak" style="width: 22%;">{{ $t('music_album') }}</th>
-            <th class="nobreak" style="width: 9%;">{{ $t('music_time') }}</th>
-            <th class="nobreak" style="width: 16%;">{{ $t('action') }}</th>
-          </tr>
-          <tr v-else>
-            <th class="num" style="width: 5%;">#</th>
-            <th class="nobreak">{{ $t('music_name') }}</th>
-            <th class="nobreak" style="width: 25%;">{{ $t('music_singer') }}</th>
-            <th class="nobreak" style="width: 28%;">{{ $t('music_album') }}</th>
-            <th class="nobreak" style="width: 10%;">{{ $t('music_time') }}</th>
-          </tr>
-        </thead>
-      </table>
+      <div :class="$style.headerRow">
+        <div :class="[$style.headerCell, $style.numCell]" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+          <svg v-if="isShowCover" :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-cover" /></svg>
+          <span v-else>#</span>
+        </div>
+        <div :class="$style.headerCell" style="flex: auto;">{{ $t('music_name') }}</div>
+        <div :class="$style.headerCell" :style="{ flex: actionButtonsVisible ? '0 0 22%' : '0 0 25%' }">{{ $t('music_singer') }}</div>
+        <div :class="$style.headerCell" :style="{ flex: actionButtonsVisible ? '0 0 22%' : '0 0 28%' }">{{ $t('music_album') }}</div>
+        <div :class="$style.headerCell" :style="{ flex: actionButtonsVisible ? '0 0 9%' : '0 0 10%' }">{{ $t('music_time') }}</div>
+        <div v-if="actionButtonsVisible" :class="$style.headerCell" :style="{ flex: '0 0 16%' }">{{ $t('action') }}</div>
+      </div>
     </div>
     <div v-show="list.length" ref="dom_listContent" :class="$style.content">
       <base-virtualized-list
@@ -291,7 +268,6 @@ export default {
       isShowSearchBar,
       searchList,
       handleMusicSearchAction,
-      handleShowSearchBar,
     } = useSearch({
       setSelectedIndex,
       handlePlayMusic,
@@ -403,7 +379,6 @@ export default {
       handleCoverError,
       toggleCoverShow,
       currentListName,
-      handleShowSearch: handleShowSearchBar,
 
       isShowMusicToggleModal,
       selectedToggleMusicInfo,
@@ -440,49 +415,37 @@ export default {
     }
   }
 }
-.listHeader {
-  position: relative;
+.headerRow {
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  border-bottom: var(--color-list-header-border-bottom);
   height: 38px;
-  padding-right: 5px;
-  flex: none;
 }
-.listHeaderTitle {
-  flex: auto;
+.headerCell {
+  flex: none;
+  padding: 0 6px;
+  box-sizing: border-box;
   font-size: 12px;
+  color: var(--color-font-label);
   line-height: 38px;
-  padding: 0 10px;
-  .mixin-ellipsis-1();
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
-.listHeaderBtns {
-  flex: none;
+.numCell {
   display: flex;
   align-items: center;
-}
-.listHeaderBtn {
-  background: none;
-  height: 30px;
-  border: none;
-  outline: none;
-  border-radius: @radius-border;
+  justify-content: center;
+  white-space: nowrap;
   cursor: pointer;
-  opacity: .45;
-  transition: opacity @transition-normal, background-color .2s ease;
-  color: var(--color-button-font);
-  padding: 2px 6px;
-  svg {
-    vertical-align: bottom;
-  }
-  &:active {
-    opacity: 1 !important;
-  }
-  &:hover {
-    opacity: 1 !important;
-    background-color: var(--color-button-background-hover);
-  }
+  flex: 0 0 5%;
+  color: var(--color-font-label);
+}
+.headerIcon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  fill: var(--color-button-font);
 }
 .num {
   height: 100%;
