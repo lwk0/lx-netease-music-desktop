@@ -8,8 +8,8 @@
         <table>
           <thead>
             <tr>
-              <th class="num" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-                <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 739.96 763.59" space="preserve"><use xlink:href="#icon-album" /></svg></template>
+              <th class="num" :class="$style.headerNum" style="width: 5%; cursor: pointer;" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
+                <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-cover" /></svg></template>
                 <template v-else>#</template>
               </th>
               <th class="nobreak">{{ $t('music_name') }}</th>
@@ -305,12 +305,16 @@ export default {
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
   display: block;
 }
+.headerNum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .headerIcon {
   display: block;
-  width: 32px;
-  height: 32px;
+  width: 20px;
+  height: 20px;
   fill: var(--color-button-font);
-  transform: translate(8px, 18px);
 }
 
 .content {

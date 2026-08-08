@@ -5,7 +5,7 @@
       <div class="thead" :class="$style.headerWrap">
         <div v-if="actionButtonsVisible" :class="$style.headerRow">
           <div :class="[$style.headerCell, $style.numCell]" :style="getColStyle('num')" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-            <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 739.96 763.59" space="preserve"><use xlink:href="#icon-album" /></svg></template>
+            <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-cover" /></svg></template>
             <template v-else>#</template>
           </div>
           <div :class="$style.headerCell" :style="getColStyle('name')">{{ $t('music_name') }}</div>
@@ -16,7 +16,7 @@
         </div>
         <div v-else :class="$style.headerRow">
           <div :class="[$style.headerCell, $style.numCell]" :style="getColStyle('num')" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
-            <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 739.96 763.59" space="preserve"><use xlink:href="#icon-album" /></svg></template>
+            <template v-if="isShowCover"><svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-cover" /></svg></template>
             <template v-else>#</template>
           </div>
           <div :class="$style.headerCell" :style="getColStyle('name')">{{ $t('music_name') }}</div>
@@ -588,10 +588,9 @@ export default {
 
 .headerIcon {
   display: block;
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   fill: var(--color-button-font);
-  transform: translate(8px, 4px);
 }
 
 </style>
