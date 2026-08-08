@@ -3,7 +3,15 @@
   .nl-bar(:class="$style.bar")
     base-btn(:class="$style.backBtn" @click="handleBack") {{ $t('netease__web_login_back') }}
     .nl-title(:class="$style.title") {{ $t('netease__web_login_title') }}
-  webview.nl-webview(:class="$style.webview" :src="loginUrl" :partition="partition" :useragent="userAgent" :preload="preloadPath" allowpopups)
+  webview.nl-webview(
+    :class="$style.webview"
+    :src="loginUrl"
+    :partition="partition"
+    :useragent="userAgent"
+    :preload="preloadPath"
+    :webpreferences="'webSecurity=no,allowRunningInsecureContent=yes,allowpopups=yes,contextIsolation=yes,nodeIntegration=no'"
+    allowpopups
+  )
 </template>
 
 <script>

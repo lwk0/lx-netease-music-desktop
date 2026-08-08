@@ -185,6 +185,8 @@ export const listenerAppEvent = (startApp: () => void) => {
           partition: neteasePartition,
           nodeIntegration: false,
           contextIsolation: true,
+          webSecurity: false,
+          allowRunningInsecureContent: true,
         },
       })
       void oauthWin.loadURL(url)
@@ -243,6 +245,8 @@ export const listenerAppEvent = (startApp: () => void) => {
         neteasePartition = params.partition
         ;(webPreferences as Electron.WebPreferences & { allowpopups?: boolean }).allowpopups = true
         webPreferences.nodeIntegration = false
+        webPreferences.webSecurity = false
+        webPreferences.allowRunningInsecureContent = true
         return
       }
       // Strip away preload scripts if unused or verify their location is legitimate

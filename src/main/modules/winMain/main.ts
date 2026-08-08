@@ -135,6 +135,8 @@ export const createWindow = () => {
     if (params.partition && params.partition.startsWith('netease-login-embedded')) {
       webPreferences.contextIsolation = false
       webPreferences.preload = NETEASE_LOGIN_PRELOAD
+      webPreferences.webSecurity = false
+      webPreferences.allowRunningInsecureContent = true
       ;(webPreferences as Electron.WebPreferences & { allowpopups?: boolean }).allowpopups = true
     }
   })
