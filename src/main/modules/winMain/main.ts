@@ -8,6 +8,30 @@ import { mainSend } from '@common/mainIpc'
 import { sendFocus, sendTaskbarButtonClick } from './rendererEvent'
 import { encodePath } from '@common/utils/electron'
 
+// 封面图片加载兜底：复刻手机魔改版 Image 组件的 defaultHeaders（浏览器 UA），
+// 并对网易云/酷狗/酷我补 Referer，规避各音源 CDN 对图片请求的 403 / 空白响应。
+// 仅作用于 image 类型请求，不影响 musicSdk 的 API 调用。
+const setupCoverImageHeaders = () => {
+  const coverSession = session.fromPartition('persist:win-main')
+  coverSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    if (details.resourceType !== 'image') {
+      callback({})
+      return
+    }
+    details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    const url = details.url
+    if (url.includes('music.126.net')) {
+      details.requestHeaders.Referer = 'http://music.163.com/'
+    } else if (url.includes('kugou.com')) {
+      details.requestHeaders.Referer = 'https://www.kugou.com/'
+    } else if (url.includes('kuwo.cn')) {
+      details.requestHeaders.Referer = 'https://www.kuwo.cn/'
+    }
+    callback({ requestHeaders: details.requestHeaders })
+  })
+}
+setupCoverImageHeaders()
+
 let browserWindow: Electron.BrowserWindow | null = null
 
 const winEvent = () => {
