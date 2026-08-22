@@ -26,6 +26,11 @@
           <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
             <transition name="play-active">
               <img v-if="isShowCover && item.meta?.picUrl && !failedCovers.has(item.meta.picUrl)" :src="item.meta.picUrl" :class="$style.coverImg" @error="handleCoverError">
+              <div v-else-if="isShowCover" :class="$style.coverPlaceholder">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve">
+                  <use xlink:href="#icon-cover" />
+                </svg>
+              </div>
               <div v-else class="num">{{ index + 1 }}</div>
             </transition>
             <transition name="play-active">
@@ -62,6 +67,11 @@
           <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
             <transition name="play-active">
               <img v-if="isShowCover && item.meta?.picUrl && !failedCovers.has(item.meta.picUrl)" :src="item.meta.picUrl" :class="$style.coverImg" @error="handleCoverError">
+              <div v-else-if="isShowCover" :class="$style.coverPlaceholder">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve">
+                  <use xlink:href="#icon-cover" />
+                </svg>
+              </div>
               <div v-else class="num">{{ index + 1 }}</div>
             </transition>
             <transition name="play-active">
@@ -474,6 +484,17 @@ export default {
   border-radius: 5px;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
   display: block;
+}
+.coverPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  background-color: var(--color-primary-light-900-alpha-200);
+  color: var(--color-primary-light-400-alpha-500);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
 }
 .content {
   min-height: 0;

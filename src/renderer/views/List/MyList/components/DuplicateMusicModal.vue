@@ -10,6 +10,11 @@
       <div :class="$style.listItem">
         <div :class="$style.num">
           <img v-if="isShowCover && item.musicInfo.meta?.picUrl && !failedCovers.has(item.musicInfo.meta.picUrl)" :src="item.musicInfo.meta.picUrl" :class="$style.coverImg" @error="handleCoverError">
+          <div v-else-if="isShowCover" :class="$style.coverPlaceholder">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve">
+              <use xlink:href="#icon-cover" />
+            </svg>
+          </div>
           <template v-else>{{ item.index + 1 }}</template>
         </div>
         <div :class="$style.textContent">
@@ -186,6 +191,17 @@ export default {
   border-radius: 4px;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.15);
   display: block;
+}
+.coverPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background-color: var(--color-primary-light-900-alpha-200);
+  color: var(--color-primary-light-400-alpha-500);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.15);
 }
 
 .textContent {

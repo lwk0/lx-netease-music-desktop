@@ -41,6 +41,11 @@
                 <div class="list-item-cell no-select num" :class="$style.coverCell" :style="getColStyle('num')" @click.stop>
                   <transition name="play-active">
                     <img v-if="isShowCover && item.meta?.picUrl && !failedCovers.has(item.meta.picUrl)" :src="item.meta.picUrl" :class="$style.coverImg" @error="handleCoverError">
+                    <div v-else-if="isShowCover" :class="$style.coverPlaceholder">
+                      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve">
+                        <use xlink:href="#icon-cover" />
+                      </svg>
+                    </div>
                     <span v-else>{{ index + 1 }}</span>
                   </transition>
                   <transition name="play-active">
@@ -82,6 +87,11 @@
                 <div class="list-item-cell no-select num" :class="$style.coverCell" :style="getColStyle('num')" @click.stop>
                   <transition name="play-active">
                     <img v-if="isShowCover && item.meta?.picUrl && !failedCovers.has(item.meta.picUrl)" :src="item.meta.picUrl" :class="$style.coverImg" @error="handleCoverError">
+                    <div v-else-if="isShowCover" :class="$style.coverPlaceholder">
+                      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="60%" viewBox="0 0 24 24" space="preserve">
+                        <use xlink:href="#icon-cover" />
+                      </svg>
+                    </div>
                     <span v-else>{{ index + 1 }}</span>
                   </transition>
                   <transition name="play-active">
@@ -571,6 +581,17 @@ export default {
   height: 28px;
   object-fit: cover;
   border-radius: 4px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.15);
+}
+.coverPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background-color: var(--color-primary-light-900-alpha-200);
+  color: var(--color-primary-light-400-alpha-500);
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.15);
 }
 .playIcon {
