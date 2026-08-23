@@ -11,8 +11,7 @@ import { encodePath } from '@common/utils/electron'
 // 封面图片加载兜底：复刻手机魔改版 Image 组件的 defaultHeaders（浏览器 UA），
 // 并对网易云/酷狗/酷我补 Referer，规避各音源 CDN 对图片请求的 403 / 空白响应。
 // 仅作用于 image 类型请求，不影响 musicSdk 的 API 调用。
-const setupCoverImageHeaders = () => {
-  const coverSession = session.fromPartition('persist:win-main')
+const setupCoverImageHeaders = (coverSession: Electron.Session) => {
   coverSession.webRequest.onBeforeSendHeaders((details, callback) => {
     if (details.resourceType !== 'image') {
       callback({})
@@ -30,7 +29,6 @@ const setupCoverImageHeaders = () => {
     callback({ requestHeaders: details.requestHeaders })
   })
 }
-setupCoverImageHeaders()
 
 let browserWindow: Electron.BrowserWindow | null = null
 
@@ -94,6 +92,8 @@ export const createWindow = () => {
   const ses = session.fromPartition('persist:win-main')
   const proxy = getProxy()
   setSesProxy(ses, proxy?.host, proxy?.port)
+  // 必须在 app ready / BrowserWindow 创建之后再注册 session webRequest
+  setupCoverImageHeaders(ses)
 
   /**
    * Initial window options

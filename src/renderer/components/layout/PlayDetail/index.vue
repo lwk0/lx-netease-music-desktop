@@ -11,7 +11,7 @@ transition(enter-active-class="animated slideInRight" leave-active-class="animat
         div.left(:class="$style.left")
           //- div(:class="$style.info")
           div(:class="$style.info")
-            div(:class="[$style.cover, { [$style.playing]: isPlay, [$style.vinyl]: isVinyl }]")
+            div(:class="[$style.cover, { [$style.playing]: isPlay, [$style.vinyl]: isVinyl }]" @click="toggleCoverEffect")
               img(v-if="musicInfo.pic" :class="[$style.img, { [$style.vinylImg]: isVinyl }]" :src="musicInfo.pic")
             div.description(:class="['scroll', $style.description]")
               p {{ $t('player__music_name') }}{{ musicInfo.name }}
@@ -59,7 +59,7 @@ import MusicComment from './components/MusicComment/index.vue'
 import ControlBtnsLeftHeader from './ControlBtnsLeftHeader.vue'
 import ControlBtnsRightHeader from './ControlBtnsRightHeader.vue'
 import { registerAutoHideMounse, unregisterAutoHideMounse } from './autoHideMounse'
-import { appSetting } from '@renderer/store/setting'
+import { appSetting, updateSetting } from '@renderer/store/setting'
 import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
 
 export default {
@@ -91,6 +91,10 @@ export default {
       return m.meta?.albumId ?? m.albumId ?? null
     })
     const isVinyl = computed(() => appSetting['playDetail.coverEffect'] === 'vinyl')
+    const toggleCoverEffect = () => {
+      const next = appSetting['playDetail.coverEffect'] === 'original' ? 'vinyl' : 'original'
+      updateSetting({ 'playDetail.coverEffect': next })
+    }
 
     const goArtist = (artistId) => {
       const source = playMusicInfo.musicInfo?.source ?? 'wy'
@@ -150,6 +154,7 @@ export default {
       artistList,
       albumId,
       isVinyl,
+      toggleCoverEffect,
       goArtist,
       goAlbum,
       hide,
@@ -357,6 +362,7 @@ export default {
   justify-content: center;
   background-color: transparent;
   box-shadow: 0 4px 20px rgba(0, 0, 0, .2);
+  cursor: pointer;
 
   &.vinyl {
     border-radius: 50%;
