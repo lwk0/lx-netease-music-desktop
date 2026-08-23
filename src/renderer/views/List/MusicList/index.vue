@@ -30,15 +30,6 @@
           </div>
         </transition>
       </div>
-      <button
-        :class="[$style.toolbarBatchBtn, { [$style.toolbarBatchBtnActive]: isBatchSelectMode }]"
-        :title="$t('list__batch_select')" :aria-label="$t('list__batch_select')"
-        @click="isBatchSelectMode = !isBatchSelectMode"
-      >
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve">
-          <use xlink:href="#icon-check-box" />
-        </svg>
-      </button>
     </div>
     <div class="thead">
       <div :class="$style.headerRow">
@@ -149,28 +140,6 @@
     <music-sort-modal v-model:show="isShowMusicSortModal" :music-info="selectedSortMusicInfo" :selected-num="selectedNum" @confirm="sortMusic" />
     <music-toggle-modal v-model:show="isShowMusicToggleModal" :music-info="selectedToggleMusicInfo" @toggle="toggleSource" />
     <base-menu v-model="isShowItemMenu" :menus="menus" :xy="menuLocation" item-name="name" @menu-click="handleMenuClick" />
-    <transition enter-active-class="animated-fast slideInUp" leave-active-class="animated-fast slideOutDown">
-      <div v-if="selectedList.length" :class="$style.batchToolbar">
-        <span :class="$style.batchCount">{{ $t('list__selected_count', { count: selectedList.length }) }}</span>
-        <div :class="$style.batchActions">
-          <button :title="$t('list__play')" :aria-label="$t('list__play')" @click="handlePlaySelected">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 1024 1024" space="preserve"><use xlink:href="#icon-play" /></svg>
-          </button>
-          <button :title="$t('list__add_to')" :aria-label="$t('list__add_to')" @click="handleShowMusicAddModal(-1, false)">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-list-add" /></svg>
-          </button>
-          <button :title="$t('list__download')" :aria-label="$t('list__download')" @click="handleShowDownloadModal(-1, false)">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 475.078 475.077" space="preserve"><use xlink:href="#icon-download" /></svg>
-          </button>
-          <button :title="$t('list__remove')" :aria-label="$t('list__remove')" @click="handleRemoveMusic(-1)">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 212.982 212.982" space="preserve"><use xlink:href="#icon-delete" /></svg>
-          </button>
-          <button :title="$t('cancel_button_text_2')" :aria-label="$t('cancel_button_text_2')" @click="removeAllSelect">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-close" /></svg>
-          </button>
-        </div>
-      </div>
-    </transition>
   </div>
 </template>
 
@@ -260,7 +229,6 @@ export default {
 
     const {
       selectedList,
-      isBatchSelectMode,
       listItemHeight,
       handleSelectData,
       removeAllSelect,
@@ -269,7 +237,6 @@ export default {
     const {
       handlePlayMusic,
       handlePlayMusicLater,
-      handlePlaySelected,
       doubleClickPlay,
     } = usePlay({ props, selectedList, list, removeAllSelect })
 
@@ -469,10 +436,8 @@ export default {
       listItemHeight,
       handleListItemClick,
       selectedList,
-      isBatchSelectMode,
       handleListItemRightClick,
       removeAllSelect,
-      handlePlaySelected,
       handleListBtnClick,
       rightClickSelectedIndex,
       selectedIndex,
@@ -656,40 +621,6 @@ export default {
     background-color: var(--color-button-background-hover);
   }
 }
-.toolbarBatchBtn {
-  flex: none;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  border-radius: @radius-border;
-  background: transparent;
-  color: var(--color-font-label);
-  cursor: pointer;
-  opacity: .7;
-  transition: opacity @transition-fast, background-color .2s ease, color .2s ease;
-  svg {
-    display: block;
-    width: 16px;
-    height: 16px;
-    fill: currentColor;
-  }
-  &:hover {
-    opacity: 1;
-    background-color: var(--color-button-background-hover);
-  }
-  &:active {
-    background-color: var(--color-button-background-active);
-  }
-}
-.toolbarBatchBtnActive {
-  color: var(--color-primary);
-  opacity: 1;
-  background-color: var(--color-primary-light-100-alpha-800);
-}
 .searchDropdown {
   position: absolute;
   left: 0;
@@ -852,63 +783,6 @@ export default {
 .likeBtn {
   width: 17px;
   height: 17px;
-}
-
-.batchToolbar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 15px;
-  width: fit-content;
-  margin: 0 auto;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 14px;
-  border-radius: @radius-border * 2;
-  background-color: var(--color-content-background);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, .18);
-  border: 1px solid var(--color-button-background-hover);
-}
-.batchCount {
-  font-size: 13px;
-  color: var(--color-button-font);
-  white-space: nowrap;
-}
-.batchActions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  button {
-    flex: none;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: none;
-    border-radius: @radius-border;
-    background: transparent;
-    color: var(--color-button-font);
-    cursor: pointer;
-    opacity: .75;
-    transition: opacity @transition-fast, background-color .2s ease;
-    svg {
-      display: block;
-      width: 18px;
-      height: 18px;
-      fill: currentColor;
-    }
-    &:hover {
-      opacity: 1;
-      background-color: var(--color-button-background-hover);
-    }
-    &:active {
-      background-color: var(--color-button-background-active);
-    }
-  }
 }
 
 </style>

@@ -47,7 +47,6 @@ const useKeyEvent = ({ handleSelectAllData, listRef }) => {
 
 export default ({ listRef, list }) => {
   const selectedList = ref([])
-  const isBatchSelectMode = ref(false)
 
   let lastSelectIndex = -1
   const listItemHeight = computed(() => {
@@ -64,7 +63,7 @@ export default ({ listRef, list }) => {
   const keyEvent = useKeyEvent({ listRef, handleSelectAllData })
 
   const handleSelectData = clickIndex => {
-    const isCtrlSelect = keyEvent.isModDown || isBatchSelectMode.value
+    const isCtrlSelect = keyEvent.isModDown
     if (keyEvent.isShiftDown) {
       if (selectedList.value.length) {
         removeAllSelect()
@@ -102,7 +101,6 @@ export default ({ listRef, list }) => {
 
   return {
     selectedList,
-    isBatchSelectMode,
     listItemHeight,
     removeAllSelect,
     handleSelectData,
