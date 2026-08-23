@@ -586,12 +586,12 @@ export default {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 6px;
-  width: 200px;
-  height: 30px;
-  padding: 0 10px;
+  gap: 5px;
+  width: 160px;
+  height: 24px;
+  padding: 0 8px;
   border: 1px solid transparent;
-  border-radius: 15px;
+  border-radius: 12px;
   background-color: var(--color-button-background-hover);
   color: var(--color-font-label);
   cursor: text;
@@ -612,7 +612,7 @@ export default {
     border: none;
     background: transparent;
     color: var(--color-button-font);
-    font-size: 12px;
+    font-size: 11px;
     outline: none;
     &::placeholder {
       color: var(--color-font-label);
@@ -621,14 +621,14 @@ export default {
 }
 .toolbarSearchIcon {
   flex: none;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   fill: currentColor;
 }
 .toolbarSearchClear {
   flex: none;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -649,24 +649,44 @@ export default {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + 6px);
-  max-height: 260px;
+  top: calc(100% + 5px);
+  max-height: 220px;
   overflow-y: auto;
-  padding: 6px;
+  padding: 4px;
   border-radius: @radius-border;
   background-color: var(--color-content-background);
   box-shadow: 0 4px 16px rgba(0, 0, 0, .18);
   border: 1px solid var(--color-button-background-hover);
   z-index: 100;
+  // 统一滚动条风格（与项目 .scroll 保持一致）
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    background-color: rgba(0, 0, 0, 0);
+  }
+  &::-webkit-scrollbar-track {
+    background-color: var(--color-primary-light-100-alpha-800);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background-color: var(--color-primary-alpha-600);
+    transition: background-color 0.4s ease;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    border-radius: 3px;
+    background-color: var(--color-primary-alpha-400);
+    transition: background-color 0.4s ease;
+  }
 }
 .searchEmpty {
-  padding: 10px;
+  padding: 8px;
   text-align: center;
   font-size: 12px;
   color: var(--color-font-label);
 }
 .searchItem {
-  padding: 7px 8px;
+  padding: 5px 8px;
   border-radius: @radius-border;
   cursor: pointer;
   font-size: 12px;
