@@ -326,10 +326,11 @@ export default {
   display: flex;
   flex-flow: column nowrap;
   justify-content: flex-start;
-  align-items: flex-start;
+  align-items: center;
   width: 100%;
   max-width: 380px;
   min-height: 0;
+  text-align: center;
 }
 .img {
   width: 100%;
