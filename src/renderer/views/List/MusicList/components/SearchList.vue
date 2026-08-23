@@ -1,6 +1,6 @@
 <template>
   <teleport to="#view">
-    <div v-show="isShow" ref="dom_container" :class="$style.container">
+    <div v-show="isShow" ref="dom_container" :class="[$style.container, position === 'right' ? $style.containerRight : null]">
       <transition enter-active-class="animated-fast zoomIn" leave-active-class="animated zoomOut" @after-leave="handleAnimated">
         <div v-show="visible" :class="$style.search">
           <div :class="$style.form">
@@ -57,6 +57,10 @@ export default {
     visible: {
       type: Boolean,
       default: false,
+    },
+    position: {
+      type: String,
+      default: 'center',
     },
   },
   emits: ['action'],
@@ -231,6 +235,13 @@ export default {
   width: 45%;
   height: @height-toolbar * 0.52;
   z-index: 99;
+}
+.containerRight {
+  left: auto;
+  right: 10px;
+  transform: none;
+  top: 48px;
+  width: 320px;
 }
 
 .search {

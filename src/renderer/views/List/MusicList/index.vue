@@ -1,5 +1,14 @@
 <template>
   <div :class="$style.list">
+    <div :class="$style.toolbar">
+      <h2 :class="$style.toolbarTitle">{{ currentListName }}</h2>
+      <div :class="$style.toolbarSearch" @click="handleShowSearchBar">
+        <svg :class="$style.toolbarSearchIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve">
+          <use xlink:href="#icon-search" />
+        </svg>
+        <span :class="$style.toolbarSearchText">{{ $t('list__search') }}</span>
+      </div>
+    </div>
     <div class="thead">
       <div :class="$style.headerRow">
         <div :class="[$style.headerCell, $style.numCell]" :title="$t('list__toggle_cover')" :aria-label="$t('list__toggle_cover')" ignore-tip @click="toggleCoverShow">
@@ -10,14 +19,7 @@
         <div :class="$style.headerCell" :style="{ flex: actionButtonsVisible ? '0 0 22%' : '0 0 25%' }">{{ $t('music_singer') }}</div>
         <div :class="$style.headerCell" :style="{ flex: actionButtonsVisible ? '0 0 22%' : '0 0 28%' }">{{ $t('music_album') }}</div>
         <div :class="$style.headerCell" :style="{ flex: actionButtonsVisible ? '0 0 9%' : '0 0 10%' }">{{ $t('music_time') }}</div>
-        <div v-if="actionButtonsVisible" :class="[$style.headerCell, $style.actionHeader]" :style="{ flex: '0 0 16%' }">
-          <span>{{ $t('action') }}</span>
-          <button :class="$style.headerSearchBtn" :title="$t('list__search')" :aria-label="$t('list__search')" @click.stop="handleShowSearchBar">
-            <svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve">
-              <use xlink:href="#icon-search" />
-            </svg>
-          </button>
-        </div>
+        <div v-if="actionButtonsVisible" :class="$style.headerCell" :style="{ flex: '0 0 16%' }">{{ $t('action') }}</div>
       </div>
     </div>
     <div v-show="list.length" ref="dom_listContent" :class="$style.content">
@@ -112,7 +114,7 @@
     />
     <common-download-modal v-model:show="isShowDownload" :music-info="selectedDownloadMusicInfo" teleport="#view" :list-id="listId" />
     <common-download-multiple-modal v-model:show="isShowDownloadMultiple" :list="selectedList" teleport="#view" :list-id="listId" @confirm="removeAllSelect" />
-    <search-list :list="list" :visible="isShowSearchBar" @action="handleMusicSearchAction" />
+    <search-list :list="list" :visible="isShowSearchBar" position="right" @action="handleMusicSearchAction" />
     <music-sort-modal v-model:show="isShowMusicSortModal" :music-info="selectedSortMusicInfo" :selected-num="selectedNum" @confirm="sortMusic" />
     <music-toggle-modal v-model:show="isShowMusicToggleModal" :music-info="selectedToggleMusicInfo" @toggle="toggleSource" />
     <base-menu v-model="isShowItemMenu" :menus="menus" :xy="menuLocation" item-name="name" @menu-click="handleMenuClick" />
@@ -459,6 +461,57 @@ export default {
     }
   }
 }
+.toolbar {
+  flex: none;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: var(--color-list-header-border-bottom);
+  background-color: var(--color-content-background);
+}
+.toolbarTitle {
+  flex: auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-button-font);
+  line-height: 44px;
+  .mixin-ellipsis-1();
+}
+.toolbarSearch {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 180px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--color-button-background-hover);
+  border-radius: @radius-border;
+  background-color: var(--color-content-background);
+  color: var(--color-font-label);
+  cursor: text;
+  transition: border-color @transition-fast, background-color .2s ease;
+  &:hover {
+    border-color: var(--color-primary);
+  }
+}
+.toolbarSearchIcon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+.toolbarSearchText {
+  flex: auto;
+  font-size: 12px;
+  line-height: 30px;
+  color: currentColor;
+  .mixin-ellipsis-1();
+}
 .headerRow {
   display: flex;
   flex-flow: row nowrap;
@@ -552,38 +605,6 @@ export default {
   }
 }
 
-.actionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-right: 4px;
-}
-.headerSearchBtn {
-  flex: none;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  border-radius: @radius-border;
-  background: transparent;
-  color: var(--color-font-label);
-  cursor: pointer;
-  opacity: .7;
-  transition: opacity @transition-fast, background-color .2s ease;
-  svg {
-    display: block;
-    width: 14px;
-    height: 14px;
-    fill: currentColor;
-  }
-  &:hover {
-    opacity: 1;
-    background-color: var(--color-button-background-hover);
-  }
-}
 .actionCell {
   display: flex;
   align-items: center;

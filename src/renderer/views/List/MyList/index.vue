@@ -8,11 +8,6 @@
             <use xlink:href="#icon-list-add" />
           </svg>
         </button>
-        <button :class="$style.listsAdd" :aria-label="$t('list_update_modal__title')" @click="isShowListUpdateModal = true">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="transform: rotate(45deg);" height="70%" viewBox="0 0 24 24" space="preserve">
-            <use xlink:href="#icon-refresh" />
-          </svg>
-        </button>
       </div>
     </div>
     <div :class="$style.listSearch">
