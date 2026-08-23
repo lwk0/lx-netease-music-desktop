@@ -216,6 +216,8 @@ jobs:
     steps:
       - name: Check out git repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version != '' && github.event.inputs.version || '' }}
 
       - name: Install python3 setuptools
         run: brew install python-setuptools
@@ -251,6 +253,14 @@ jobs:
           cd build
           md5 *.zip
 
+      - name: Upload artifacts to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.inputs.version != '' && github.event.inputs.version || 'v1.0.1' }}
+        run: |
+          cd build
+          gh release upload "$RELEASE_TAG" *.zip --clobber --repo lwk0/lx-netease-music-desktop
+
   Linux:
     name: Linux
     runs-on: ubuntu-latest
@@ -266,6 +276,8 @@ jobs:
 
       - name: Check out git repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version != '' && github.event.inputs.version || '' }}
 
       - name: Get npm cache directory
         shell: bash
@@ -299,3 +311,11 @@ jobs:
         run: |
           cd build
           md5sum *.deb *.rpm *.pacman *.AppImage
+
+      - name: Upload artifacts to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.inputs.version != '' && github.event.inputs.version || 'v1.0.1' }}
+        run: |
+          cd build
+          gh release upload "$RELEASE_TAG" *.deb *.rpm *.pacman *.AppImage --clobber --repo lwk0/lx-netease-music-desktop
