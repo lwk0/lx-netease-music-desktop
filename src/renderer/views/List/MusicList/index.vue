@@ -2,11 +2,33 @@
   <div :class="$style.list">
     <div :class="$style.toolbar">
       <h2 :class="$style.toolbarTitle">{{ currentListName }}</h2>
-      <div :class="$style.toolbarSearch" @click="handleShowSearchBar">
+      <div :class="$style.toolbarSearch">
         <svg :class="$style.toolbarSearchIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve">
           <use xlink:href="#icon-search" />
         </svg>
-        <span :class="$style.toolbarSearchText">{{ $t('list__search') }}</span>
+        <input
+          ref="dom_searchInput" v-model.trim="searchText" type="text" :placeholder="$t('list__search')"
+          @input="handleSearchInput" @keyup.escape="clearSearch" @focus="handleSearchFocus" @blur="handleSearchBlur"
+          @keydown="handleSearchKeyDown"
+        >
+        <button v-if="searchText.length" :class="$style.toolbarSearchClear" @click="clearSearch">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 212.982 212.982" space="preserve">
+            <use xlink:href="#icon-delete" />
+          </svg>
+        </button>
+        <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
+          <div v-if="isSearchFocused && searchText.length" :class="$style.searchDropdown">
+            <div v-if="!searchResult.length" :class="$style.searchEmpty">{{ $t('no_item') }}</div>
+            <div
+              v-for="(item, index) in searchResult" :key="item.id"
+              :class="[$style.searchItem, { [$style.searchItemActive]: searchSelectIndex === index }]"
+              @mouseenter="searchSelectIndex = index" @mousedown.prevent="handleSearchResultClick(item)"
+            >
+              <span :class="$style.searchItemName">{{ item.name }}</span>
+              <span :class="$style.searchItemSinger"> - {{ item.singer }}</span>
+            </div>
+          </div>
+        </transition>
       </div>
     </div>
     <div class="thead">
@@ -145,6 +167,7 @@
 
 <script>
 import { clipboardWriteText } from '@common/utils/electron'
+import { debounce } from '@common/utils'
 import { assertApiSupport } from '@renderer/store/utils'
 import SearchList from './components/SearchList.vue'
 import MusicSortModal from './components/MusicSortModal.vue'
@@ -161,7 +184,7 @@ import useSearch from './useSearch'
 import useListScroll from './useListScroll'
 import useMusicToggle from './useMusicToggle'
 import WyLikeBtn from '@renderer/components/common/WyLikeBtn.vue'
-import { ref, computed } from '@common/utils/vueTools'
+import { ref, computed, toRaw } from '@common/utils/vueTools'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { useI18n } from '@renderer/plugins/i18n'
 import { defaultList, loveList, tempList, userLists } from '@renderer/store/list/state'
@@ -317,6 +340,71 @@ export default {
       listRef,
     })
 
+    const dom_searchInput = ref(null)
+    const searchText = ref('')
+    const searchResult = ref([])
+    const isSearchFocused = ref(false)
+    const searchSelectIndex = ref(-1)
+
+    const doSearch = debounce(async() => {
+      if (!searchText.value.length) {
+        searchResult.value = []
+        searchSelectIndex.value = -1
+        return
+      }
+      searchResult.value = await window.lx.worker.main.searchListMusic(toRaw(list.value), searchText.value)
+      searchSelectIndex.value = searchResult.value.length ? 0 : -1
+    }, 250)
+
+    const handleSearchInput = () => {
+      doSearch()
+    }
+
+    const clearSearch = () => {
+      searchText.value = ''
+      searchResult.value = []
+      searchSelectIndex.value = -1
+      dom_searchInput.value?.focus()
+    }
+
+    const handleSearchFocus = () => {
+      isSearchFocused.value = true
+      if (searchText.value.length) doSearch()
+    }
+
+    const handleSearchBlur = () => {
+      setTimeout(() => {
+        isSearchFocused.value = false
+      }, 200)
+    }
+
+    const handleSearchResultClick = (item) => {
+      const idx = list.value.findIndex(m => m.id == item.id)
+      if (idx < 0) return
+      listRef.value.scrollToIndex(idx, -150, true, () => {
+        setSelectedIndex(idx)
+        setTimeout(() => {
+          setSelectedIndex(-1)
+        }, 600)
+      })
+      clearSearch()
+    }
+
+    const handleSearchKeyDown = (event) => {
+      if (!searchResult.value.length) return
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        searchSelectIndex.value = searchSelectIndex.value + 1 < searchResult.value.length ? searchSelectIndex.value + 1 : 0
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        searchSelectIndex.value = searchSelectIndex.value - 1 < -1 ? searchResult.value.length - 1 : searchSelectIndex.value - 1
+      } else if (event.key === 'Enter') {
+        event.preventDefault()
+        const item = searchResult.value[searchSelectIndex.value]
+        if (item) handleSearchResultClick(item)
+      }
+    }
+
     const { saveListPosition, restoreScroll } = useListScroll({ props, listRef, list, handleRestoreScroll })
 
 
@@ -411,6 +499,18 @@ export default {
       handleMusicSearchAction,
       handleShowSearchBar,
 
+      dom_searchInput,
+      searchText,
+      searchResult,
+      isSearchFocused,
+      searchSelectIndex,
+      handleSearchInput,
+      clearSearch,
+      handleSearchFocus,
+      handleSearchBlur,
+      handleSearchResultClick,
+      handleSearchKeyDown,
+
       list,
       playerInfo,
 
@@ -482,21 +582,41 @@ export default {
   .mixin-ellipsis-1();
 }
 .toolbarSearch {
+  position: relative;
   flex: none;
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 180px;
+  width: 200px;
   height: 30px;
   padding: 0 10px;
-  border: 1px solid var(--color-button-background-hover);
-  border-radius: @radius-border;
-  background-color: var(--color-content-background);
+  border: 1px solid transparent;
+  border-radius: 15px;
+  background-color: var(--color-button-background-hover);
   color: var(--color-font-label);
   cursor: text;
   transition: border-color @transition-fast, background-color .2s ease;
   &:hover {
+    border-color: var(--color-primary-background-hover);
+  }
+  &:focus-within {
+    background-color: var(--color-content-background);
     border-color: var(--color-primary);
+  }
+  input {
+    flex: auto;
+    width: 0;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-button-font);
+    font-size: 12px;
+    outline: none;
+    &::placeholder {
+      color: var(--color-font-label);
+    }
   }
 }
 .toolbarSearchIcon {
@@ -505,11 +625,63 @@ export default {
   height: 14px;
   fill: currentColor;
 }
-.toolbarSearchText {
-  flex: auto;
+.toolbarSearchClear {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-font-label);
+  cursor: pointer;
+  opacity: .7;
+  transition: opacity @transition-fast, background-color .2s ease;
+  &:hover {
+    opacity: 1;
+    background-color: var(--color-button-background-hover);
+  }
+}
+.searchDropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: @radius-border;
+  background-color: var(--color-content-background);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .18);
+  border: 1px solid var(--color-button-background-hover);
+  z-index: 100;
+}
+.searchEmpty {
+  padding: 10px;
+  text-align: center;
   font-size: 12px;
-  line-height: 30px;
-  color: currentColor;
+  color: var(--color-font-label);
+}
+.searchItem {
+  padding: 7px 8px;
+  border-radius: @radius-border;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-button-font);
+  transition: background-color .2s ease;
+  .mixin-ellipsis-1();
+  &:hover, &.searchItemActive {
+    background-color: var(--color-primary-background-hover);
+  }
+}
+.searchItemName {
+  .mixin-ellipsis-1();
+}
+.searchItemSinger {
+  opacity: .7;
   .mixin-ellipsis-1();
 }
 .headerRow {
