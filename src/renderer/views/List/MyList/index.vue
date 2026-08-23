@@ -15,8 +15,20 @@
         </button>
       </div>
     </div>
+    <div :class="$style.listSearch">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :class="$style.listSearchIcon" viewBox="0 0 24 24" space="preserve">
+        <use xlink:href="#icon-search" />
+      </svg>
+      <input v-model.trim="listSearchQuery" type="text" :placeholder="$t('list__search')">
+      <button v-if="listSearchQuery" :class="$style.listSearchClear" @click="listSearchQuery = ''">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 212.982 212.982" space="preserve">
+          <use xlink:href="#icon-delete" />
+        </svg>
+      </button>
+    </div>
     <ul ref="dom_lists_list" class="scroll" :class="[$style.listsContent, { [$style.sortable]: isModDown }]">
       <li
+        v-if="isShowDefaultList"
         class="default-list" :class="[$style.listsItem, {[$style.active]: defaultList.id == listId}, {[$style.clicked]: rightClickItemIndex == -2}, {[$style.fetching]: fetchingListStatus[defaultList.id]}]"
         :aria-label="$t(defaultList.name)" :aria-selected="defaultList.id == listId"
         @contextmenu="handleListsItemRigthClick($event, -2)" @click="handleListToggle(defaultList.id)"
@@ -34,6 +46,7 @@
         </span>
       </li>
       <li
+        v-if="isShowTempList"
         class="default-list" :class="[$style.listsItem, {[$style.active]: tempList.id == listId}, {[$style.clicked]: rightClickItemIndex == -3}, {[$style.fetching]: fetchingListStatus[tempList.id]}]"
         :aria-label="$t(tempList.name)" :aria-selected="tempList.id == listId"
         @contextmenu="handleListsItemRigthClick($event, -3)" @click="handleListToggle(tempList.id)"
@@ -46,6 +59,7 @@
         </span>
       </li>
       <li
+        v-if="isShowLoveList"
         class="default-list" :class="[$style.listsItem, {[$style.active]: loveList.id == listId}, {[$style.clicked]: rightClickItemIndex == -1}, {[$style.fetching]: fetchingListStatus[loveList.id]}]"
         :aria-label="$t(loveList.name)" :aria-selected="loveList.id == listId"
         @contextmenu="handleListsItemRigthClick($event, -1)" @click="handleListToggle(loveList.id)"
@@ -58,7 +72,7 @@
         </span>
       </li>
       <li
-        v-for="(item, index) in userLists"
+        v-for="(item, index) in filteredUserLists"
         :key="item.id" class="user-list"
         :class="[$style.listsItem, {[$style.active]: item.id == listId}, {[$style.clicked]: rightClickItemIndex == index}, {[$style.fetching]: fetchingListStatus[item.id]}]"
         :data-index="index" :aria-label="item.name" :aria-selected="defaultList.id == listId" @contextmenu="handleListsItemRigthClick($event, index)"
@@ -100,7 +114,7 @@ import ListUpdateModal from './components/ListUpdateModal.vue'
 import { defaultList, loveList, tempList, userLists, fetchingListStatus } from '@renderer/store/list/state'
 import { removeUserList } from '@renderer/store/list/action'
 
-import { ref, watch } from '@common/utils/vueTools'
+import { ref, watch, computed } from '@common/utils/vueTools'
 import { useRouter } from '@common/utils/vueRouter'
 import { LIST_IDS } from '@common/constants'
 
@@ -140,6 +154,19 @@ export default {
 
     const dom_lists_list = ref(null)
     const rightClickItemIndex = ref(-10)
+    const listSearchQuery = ref('')
+
+    const matchListName = (name) => {
+      if (!listSearchQuery.value) return true
+      return name.toLowerCase().includes(listSearchQuery.value.toLowerCase())
+    }
+    const isShowDefaultList = computed(() => matchListName(t(defaultList.name)))
+    const isShowLoveList = computed(() => matchListName(t(loveList.name)))
+    const isShowTempList = computed(() => matchListName(t(tempList.name)))
+    const filteredUserLists = computed(() => {
+      if (!listSearchQuery.value) return userLists
+      return userLists.filter(item => matchListName(item.name))
+    })
 
     const { handleImportList, handleExportList } = useShare()
     const { isShowListUpdateModal, handleUpdateSourceList } = useListUpdate()
@@ -237,7 +264,12 @@ export default {
       loveList,
       tempList,
       userLists,
+      filteredUserLists,
       fetchingListStatus,
+      listSearchQuery,
+      isShowDefaultList,
+      isShowLoveList,
+      isShowTempList,
       dom_lists_list,
       isShowListUpdateModal,
       isShowListSortModal,
@@ -316,6 +348,67 @@ export default {
   }
   &:hover {
     opacity: 1 !important;
+    background-color: var(--color-button-background-hover);
+  }
+}
+.listSearch {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: var(--color-list-header-border-bottom);
+  input {
+    flex: auto;
+    width: 0;
+    min-width: 0;
+    height: 26px;
+    padding: 0 8px 0 26px;
+    border: 1px solid var(--color-button-background-hover);
+    border-radius: @radius-border;
+    background-color: var(--color-content-background);
+    color: var(--color-button-font);
+    font-size: 12px;
+    outline: none;
+    transition: border-color @transition-fast;
+    &::placeholder {
+      color: var(--color-font-label);
+    }
+    &:focus {
+      border-color: var(--color-primary);
+    }
+  }
+}
+.listSearchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  fill: var(--color-font-label);
+  pointer-events: none;
+}
+.listSearchClear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-font-label);
+  cursor: pointer;
+  opacity: .7;
+  transition: opacity @transition-fast, background-color .2s ease;
+  &:hover {
+    opacity: 1;
     background-color: var(--color-button-background-hover);
   }
 }

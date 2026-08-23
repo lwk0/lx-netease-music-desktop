@@ -10,7 +10,14 @@
         <div :class="$style.headerCell" :style="{ flex: actionButtonsVisible ? '0 0 22%' : '0 0 25%' }">{{ $t('music_singer') }}</div>
         <div :class="$style.headerCell" :style="{ flex: actionButtonsVisible ? '0 0 22%' : '0 0 28%' }">{{ $t('music_album') }}</div>
         <div :class="$style.headerCell" :style="{ flex: actionButtonsVisible ? '0 0 9%' : '0 0 10%' }">{{ $t('music_time') }}</div>
-        <div v-if="actionButtonsVisible" :class="$style.headerCell" :style="{ flex: '0 0 16%' }">{{ $t('action') }}</div>
+        <div v-if="actionButtonsVisible" :class="[$style.headerCell, $style.actionHeader]" :style="{ flex: '0 0 16%' }">
+          <span>{{ $t('action') }}</span>
+          <button :class="$style.headerSearchBtn" :title="$t('list__search')" :aria-label="$t('list__search')" @click.stop="handleShowSearchBar">
+            <svg :class="$style.headerIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve">
+              <use xlink:href="#icon-search" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
     <div v-show="list.length" ref="dom_listContent" :class="$style.content">
@@ -109,6 +116,28 @@
     <music-sort-modal v-model:show="isShowMusicSortModal" :music-info="selectedSortMusicInfo" :selected-num="selectedNum" @confirm="sortMusic" />
     <music-toggle-modal v-model:show="isShowMusicToggleModal" :music-info="selectedToggleMusicInfo" @toggle="toggleSource" />
     <base-menu v-model="isShowItemMenu" :menus="menus" :xy="menuLocation" item-name="name" @menu-click="handleMenuClick" />
+    <transition enter-active-class="animated-fast slideInUp" leave-active-class="animated-fast slideOutDown">
+      <div v-if="selectedList.length" :class="$style.batchToolbar">
+        <span :class="$style.batchCount">{{ $t('list__selected_count', { count: selectedList.length }) }}</span>
+        <div :class="$style.batchActions">
+          <button :title="$t('list__play')" :aria-label="$t('list__play')" @click="handlePlaySelected">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-play" /></svg>
+          </button>
+          <button :title="$t('list__add_to')" :aria-label="$t('list__add_to')" @click="handleShowMusicAddModal(-1, false)">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-list-add" /></svg>
+          </button>
+          <button :title="$t('list__download')" :aria-label="$t('list__download')" @click="handleShowDownloadModal(-1, false)">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-download" /></svg>
+          </button>
+          <button :title="$t('list__remove')" :aria-label="$t('list__remove')" @click="handleRemoveMusic(-1)">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-delete" /></svg>
+          </button>
+          <button :title="$t('cancel_button_text_2')" :aria-label="$t('cancel_button_text_2')" @click="removeAllSelect">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve"><use xlink:href="#icon-close" /></svg>
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -205,6 +234,7 @@ export default {
     const {
       handlePlayMusic,
       handlePlayMusicLater,
+      handlePlaySelected,
       doubleClickPlay,
     } = usePlay({ props, selectedList, list, removeAllSelect })
 
@@ -278,6 +308,7 @@ export default {
       isShowSearchBar,
       searchList,
       handleMusicSearchAction,
+      handleShowSearchBar,
     } = useSearch({
       setSelectedIndex,
       handlePlayMusic,
@@ -340,6 +371,7 @@ export default {
       selectedList,
       handleListItemRightClick,
       removeAllSelect,
+      handlePlaySelected,
       handleListBtnClick,
       rightClickSelectedIndex,
       selectedIndex,
@@ -375,6 +407,7 @@ export default {
       isShowSearchBar,
       searchList,
       handleMusicSearchAction,
+      handleShowSearchBar,
 
       list,
       playerInfo,
@@ -403,6 +436,7 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 .list {
+  position: relative;
   overflow: hidden;
   height: 100%;
   flex: auto;
@@ -518,6 +552,38 @@ export default {
   }
 }
 
+.actionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 4px;
+}
+.headerSearchBtn {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: @radius-border;
+  background: transparent;
+  color: var(--color-font-label);
+  cursor: pointer;
+  opacity: .7;
+  transition: opacity @transition-fast, background-color .2s ease;
+  svg {
+    display: block;
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+  }
+  &:hover {
+    opacity: 1;
+    background-color: var(--color-button-background-hover);
+  }
+}
 .actionCell {
   display: flex;
   align-items: center;
@@ -528,6 +594,61 @@ export default {
 .likeBtn {
   width: 17px;
   height: 17px;
+}
+
+.batchToolbar {
+  position: absolute;
+  left: 50%;
+  bottom: 15px;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: @radius-border * 2;
+  background-color: var(--color-content-background);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .18);
+  border: 1px solid var(--color-button-background-hover);
+}
+.batchCount {
+  font-size: 13px;
+  color: var(--color-button-font);
+  white-space: nowrap;
+}
+.batchActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  button {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: @radius-border;
+    background: transparent;
+    color: var(--color-button-font);
+    cursor: pointer;
+    opacity: .75;
+    transition: opacity @transition-fast, background-color .2s ease;
+    svg {
+      display: block;
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+    &:hover {
+      opacity: 1;
+      background-color: var(--color-button-background-hover);
+    }
+    &:active {
+      background-color: var(--color-button-background-active);
+    }
+  }
 }
 
 </style>

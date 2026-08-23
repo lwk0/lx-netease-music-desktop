@@ -145,6 +145,7 @@
   "list__remove_tip_button": "Yes, that's right",
   "list__rename": "Rename",
   "list__search": "Search",
+  "list__selected_count": "{count} selected",
   "list__sort": "Adjust Position",
   "list__source_detail": "Song Detail",
   "list__start": "Resume",

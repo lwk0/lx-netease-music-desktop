@@ -145,6 +145,7 @@
   "list__remove_tip_button": "是的，沒錯",
   "list__rename": "重新命名",
   "list__search": "搜尋",
+  "list__selected_count": "已選擇 {count} 首",
   "list__sort": "調整位置",
   "list__source_detail": "歌曲詳情頁",
   "list__start": "開始任務",
