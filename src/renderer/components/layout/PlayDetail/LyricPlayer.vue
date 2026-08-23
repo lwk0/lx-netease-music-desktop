@@ -197,7 +197,7 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 .right {
-  flex: 0 0 60%;
+  flex: 0 0 50%;
   // padding: 0 30px;
   position: relative;
   transition: flex-basis @transition-normal;

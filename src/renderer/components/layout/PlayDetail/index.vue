@@ -308,7 +308,7 @@ export default {
   }
 }
 .left {
-  flex: 0 0 40%;
+  flex: 0 0 50%;
   display: flex;
   flex-flow: column nowrap;
   align-items: center;
@@ -323,7 +323,7 @@ export default {
   justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
-  max-width: 300px;
+  max-width: 380px;
   min-height: 0;
 }
 .img {
@@ -348,7 +348,7 @@ export default {
 .cover {
   position: relative;
   width: 100%;
-  max-width: 240px;
+  max-width: 320px;
   aspect-ratio: 1 / 1;
   border-radius: @radius-border;
   overflow: hidden;
@@ -402,7 +402,7 @@ export default {
   }
 }
 .description {
-  max-width: 300px;
+  max-width: 380px;
   margin-top: 15px;
   padding-bottom: 15px;
   min-height: 0;
