@@ -358,36 +358,41 @@ export default {
   flex: none;
   display: flex;
   align-items: center;
-  padding: 6px 8px;
+  height: 38px;
+  padding: 0 8px;
   border-bottom: var(--color-list-header-border-bottom);
   input {
     flex: auto;
     width: 0;
     min-width: 0;
-    height: 26px;
-    padding: 0 8px 0 26px;
-    border: 1px solid var(--color-button-background-hover);
-    border-radius: @radius-border;
-    background-color: var(--color-content-background);
+    height: 22px;
+    padding: 0 8px 0 28px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background-color: var(--color-button-background-hover);
     color: var(--color-button-font);
     font-size: 12px;
     outline: none;
-    transition: border-color @transition-fast;
+    transition: border-color @transition-fast, background-color .2s ease;
     &::placeholder {
       color: var(--color-font-label);
     }
+    &:hover {
+      border-color: var(--color-primary-background-hover);
+    }
     &:focus {
+      background-color: var(--color-content-background);
       border-color: var(--color-primary);
     }
   }
 }
 .listSearchIcon {
   position: absolute;
-  left: 14px;
+  left: 15px;
   top: 50%;
   transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   fill: var(--color-font-label);
   pointer-events: none;
 }
@@ -396,8 +401,8 @@ export default {
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
