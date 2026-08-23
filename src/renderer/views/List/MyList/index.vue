@@ -8,6 +8,11 @@
             <use xlink:href="#icon-list-add" />
           </svg>
         </button>
+        <button :class="$style.listsAdd" :aria-label="$t('list_update_modal__title')" @click="isShowListUpdateModal = true">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="transform: rotate(45deg);" height="70%" viewBox="0 0 24 24" space="preserve">
+            <use xlink:href="#icon-refresh" />
+          </svg>
+        </button>
       </div>
     </div>
     <div :class="$style.listSearch">
@@ -302,6 +307,8 @@ export default {
   position: relative;
   display: flex;
   flex-flow: row nowrap;
+  align-items: center;
+  height: 44px;
   border-bottom: var(--color-list-header-border-bottom);
   &:hover {
     .listsAdd {
@@ -312,7 +319,7 @@ export default {
 .listsTitle {
   flex: auto;
   font-size: 12px;
-  line-height: 38px;
+  line-height: 44px;
   padding: 0 10px;
   .mixin-ellipsis-1();
 }
