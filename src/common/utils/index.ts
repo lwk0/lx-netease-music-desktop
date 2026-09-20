@@ -6,6 +6,13 @@ export const isWin = process.platform == 'win32'
 export const isMac = process.platform == 'darwin'
 export const isProd = process.env.NODE_ENV == 'production'
 
+// 是否以 APPX / MSIX（Windows 应用包）形式安装。
+// APPX 的 exe 位于 C:\Program Files\WindowsApps\<Package>...\ 下，
+// 该路径可可靠区分传统 NSIS/便携版安装。APPX 不支持 electron-updater 的
+// quitAndInstall 自更新，也不支持 app.setLoginItemSettings 的开机自启动，
+// 相关功能需走 Windows 设置或手动覆盖安装。
+export const isAppx = isWin && process.execPath.toLowerCase().includes('windowsapps')
+
 export const getPlatform = (platform: NodeJS.Platform = process.platform) => {
   switch (platform) {
     case 'win32': return 'windows'

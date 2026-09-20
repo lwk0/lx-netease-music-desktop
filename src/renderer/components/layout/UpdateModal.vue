@@ -78,7 +78,9 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
     div(:class="$style.footer")
       div(:class="$style.desc")
         p 发现有新版本啦，你可以选择自动更新或手动更新。
-        p 手动更新可以去&nbsp;
+        p(v-if="appxError" :class="$style.error") {{ appxError }}
+        p(v-else-if="isAppx") {{ $t('setting__update_appx_tip') }}
+        p(v-else) 手动更新可以去&nbsp;
           strong.hover.underline(aria-label="点击打开" @click="handleOpenUrl('https://github.com/lwk0/lx-netease-music-desktop/releases')") 软件发布页
           | 下载。
         p 若遇到问题可以阅读
@@ -89,15 +91,26 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
       div(:class="$style.btns")
         base-btn(:class="$style.btn2" @click="handleIgnoreClick") {{ isIgnored ? '取消忽略' : '忽略更新该版本' }}
         base-btn(v-if="versionInfo.status == 'downloading'" :class="$style.btn2" disabled) 下载更新中...
+        base-btn(v-else-if="isAppx" :class="$style.btn2" :disabled="appxDownloading" @click="handleDownloadAppxClick") {{ appxBtnText }}
         base-btn(v-else :class="$style.btn2" @click="handleDownloadClick") 下载更新
 </template>
 
 <script>
-import { compareVer, sizeFormate } from '@common/utils'
+import { compareVer, sizeFormate, isAppx } from '@common/utils'
 import { openUrl, clipboardWriteText } from '@common/utils/electron'
 import { dialog } from '@renderer/plugins/Dialog'
 import { versionInfo } from '@renderer/store'
-import { getIgnoreVersion, saveIgnoreVersion, quitUpdate, downloadUpdate, checkUpdate } from '@renderer/utils/ipc'
+import {
+  getIgnoreVersion,
+  saveIgnoreVersion,
+  quitUpdate,
+  downloadUpdate,
+  checkUpdate,
+  downloadAppxUpdate,
+  onAppxUpdateProgress,
+  onAppxUpdateDownloaded,
+  onAppxUpdateError,
+} from '@renderer/utils/ipc'
 
 export default {
   setup() {
@@ -109,6 +122,11 @@ export default {
     return {
       ignoreVersion: null,
       disabledIgnoreFailBtn: true,
+      // APPX 专用：后台下载新版安装包的状态
+      appxDownloading: false,
+      appxProgress: 0,
+      appxError: '',
+      removeAppxListeners: [],
     }
   },
   computed: {
@@ -132,12 +150,36 @@ export default {
     isIgnored() {
       return this.ignoreVersion == this.versionInfo.newVersion?.version
     },
+    isAppx() {
+      return isAppx
+    },
+    appxBtnText() {
+      return this.appxDownloading ? `下载中 ${this.appxProgress.toFixed(0)}%` : '下载新版 APPX'
+    },
   },
   created() {
     void getIgnoreVersion().then(version => {
       this.ignoreVersion = version
     })
     this.disabledIgnoreFailBtn = Date.now() - parseInt(localStorage.getItem('update__check_failed_tip') ?? '0') < 7 * 86400000
+
+    // APPX：监听后台下载进度 / 完成 / 失败
+    this.removeAppxListeners.push(onAppxUpdateProgress(({ params }) => {
+      this.appxDownloading = true
+      this.appxProgress = params.percent
+    }))
+    this.removeAppxListeners.push(onAppxUpdateDownloaded(() => {
+      this.appxDownloading = false
+      this.appxProgress = 100
+    }))
+    this.removeAppxListeners.push(onAppxUpdateError(({ params }) => {
+      this.appxDownloading = false
+      this.appxError = `下载失败：${params.message}。你也可以前往发布页手动下载。`
+    }))
+  },
+  beforeUnmount() {
+    this.removeAppxListeners.forEach(fn => fn())
+    this.removeAppxListeners = []
   },
   methods: {
     handleClose() {
@@ -178,6 +220,14 @@ export default {
       saveIgnoreVersion(this.ignoreVersion = this.versionInfo.newVersion?.version)
       // saveIgnoreVersion(this.versionInfo.newVersion?.version)
       // this.handleClose()
+    },
+    handleDownloadAppxClick() {
+      if (this.isIgnored) saveIgnoreVersion(this.ignoreVersion = null)
+      this.appxError = ''
+      this.appxProgress = 0
+      this.appxDownloading = true
+      // 主进程会下载到系统「下载」目录，完成后自动打开安装包
+      downloadAppxUpdate()
     },
     handleDownloadClick() {
       if (this.isIgnored) saveIgnoreVersion(this.ignoreVersion = null)
@@ -318,6 +368,9 @@ export default {
   margin-top: 10px;
   display: block;
   width: 50%;
+}
+.error {
+  color: #ff5252;
 }
 
 </style>

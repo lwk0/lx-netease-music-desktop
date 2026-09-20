@@ -10,6 +10,7 @@ const defaultSetting: LX.AppSetting = {
   'common.windowSizeId': 3,
   'common.fontSize': 16,
   'common.startInFullscreen': false,
+  'common.autoLaunch': false,
   'common.langId': 'zh-cn',
   'common.apiSource': 'temp',
   'common.sourceNameType': 'real',
@@ -23,6 +24,7 @@ const defaultSetting: LX.AppSetting = {
   'common.tryAutoUpdate': true,
   'common.showChangeLog': true,
   'common.wy_cookie': '',
+  'common.wy_cookie_accounts': [],
   'common.wy_serpapi_key': '',
 
   'player.startupAutoPlay': false,

@@ -1,5 +1,5 @@
 import { autoUpdater } from 'electron-updater'
-import { log, isWin } from '@common/utils'
+import { log, isWin, isAppx } from '@common/utils'
 import { mainOn } from '@common/mainIpc'
 import { isExistWindow, sendEvent } from './index'
 import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
@@ -115,6 +115,9 @@ export default () => {
   })
 
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.quit_update, () => {
+    // APPX / MSIX 无法用 electron-updater 自更新（quitAndInstall 依赖 NSIS 安装器），
+    // 直接返回，由渲染端提示用户前往发布页手动覆盖安装。
+    if (isAppx) return
     global.lx.isSkipTrayQuit = true
 
     setTimeout(() => {
@@ -138,6 +141,7 @@ const checkUpdate = () => {
   // isFirstCheckedUpdate = false
 
   // 由于集合安装包中不包含win arm版，这将会导致arm版更新失败
+  if (isAppx) return
   if (isWin && process.arch.includes('arm')) {
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_error, info: 'failed' })
   } else {

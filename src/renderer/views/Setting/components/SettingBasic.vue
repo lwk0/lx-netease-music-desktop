@@ -10,6 +10,10 @@ dd
       base-checkbox(id="setting_start_in_fullscreen" :model-value="appSetting['common.startInFullscreen']" :label="$t('setting__basic_start_in_fullscreen')" @update:model-value="updateSetting({'common.startInFullscreen': $event})")
     .gap-top
       base-checkbox(id="setting_to_tray" :model-value="appSetting['tray.enable']" :label="$t('setting__basic_to_tray')" @update:model-value="updateSetting({'tray.enable': $event})")
+    .gap-top
+      base-checkbox(id="setting_auto_launch" :disabled="isAppx" :model-value="appSetting['common.autoLaunch']" :label="$t('setting__basic_auto_launch')" @update:model-value="updateSetting({'common.autoLaunch': $event})")
+    .gap-top(v-if="isAppx")
+      p(:class="$style.appxTip") {{ $t('setting__basic_auto_launch_appx_tip') }}
     .p.gap-top
       base-btn.btn(min @click="isShowPlayTimeoutModal = true") {{ $t('setting__play_timeout')}} {{ timeLabel ? ` (${timeLabel})` : '' }}
 
@@ -114,6 +118,7 @@ user-api-modal(v-model="isShowUserApiModal")
 <script>
 import { computed, ref, watch, reactive, shallowReactive } from '@common/utils/vueTools'
 import { windowSizeList, userApi, isFullscreen, themeId } from '@renderer/store'
+import { isAppx } from '@common/utils'
 import { langList, useI18n } from '@root/lang'
 import { getSystemFonts } from '@renderer/utils/ipc'
 import apiSourceInfo from '@renderer/utils/musicSdk/api-source-info'
@@ -356,6 +361,7 @@ export default {
       editThemeId,
       handleEditTheme,
       fontSizeList,
+      isAppx,
     }
   },
 }
@@ -550,6 +556,13 @@ export default {
   .status {
     margin-left: 5px;
   }
+}
+
+.appxTip {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-500);
 }
 
 </style>

@@ -24,6 +24,11 @@ declare global {
       'common.startInFullscreen': boolean
 
       /**
+       * 是否开机自动启动（Windows 登录后自动运行）
+       */
+      'common.autoLaunch': boolean
+
+      /**
        * 语言id
        */
       'common.langId': I18n['locale'] | null
@@ -87,6 +92,11 @@ declare global {
        * 网易云音乐 Cookie（登录凭证）
        */
       'common.wy_cookie': string
+
+      /**
+       * 网易云音乐多账号 Cookie 列表（用于快速切换）
+       */
+      'common.wy_cookie_accounts': Array<{ id: string, nickname: string, cookie: string, createdAt: number }>
 
       /**
        * SerpApi 密钥（网易云搜索增强）
