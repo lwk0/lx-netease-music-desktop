@@ -222,14 +222,14 @@ export default {
   transition: box-shadow .4s ease, background-color @transition-normal, border-color .3s ease;
   display: flex;
   flex-flow: column nowrap;
-  background-color: var(--color-primary-light-300-alpha-700);
-  border: 1px solid var(--color-primary-light-100-alpha-500);
-  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.06);
+  // 低调：去掉浮起的阴影，背景只留极淡的色 tint，边框也调浅，让它融入背景而不是“填色的药丸”
+  background-color: var(--color-primary-light-100-alpha-900);
+  border: 1px solid var(--color-primary-light-100-alpha-700);
 
   &.active {
-    background-color: var(--color-primary-light-600-alpha-100);
-    border-color: var(--color-primary-alpha-600);
-    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.12), 0 0 0 3px var(--color-primary-alpha-900);
+    background-color: var(--color-primary-light-100-alpha-800);
+    border-color: var(--color-primary-alpha-700);
+    box-shadow: 0 0 0 2px var(--color-primary-alpha-800);
     .form {
       input {
         border-bottom-left-radius: 0;

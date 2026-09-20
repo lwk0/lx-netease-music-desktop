@@ -566,14 +566,15 @@ export default {
   width: 160px;
   height: 24px;
   padding: 0 8px;
-  border: 1px solid transparent;
+  // 低调：去掉实心填充，改成极淡描边，安静地待在标题右侧
+  border: 1px solid var(--color-primary-light-100-alpha-700);
   border-radius: 12px;
-  background-color: var(--color-button-background-hover);
+  background-color: transparent;
   color: var(--color-font-label);
   cursor: text;
   transition: border-color @transition-fast, background-color .2s ease;
   &:hover {
-    border-color: var(--color-primary-background-hover);
+    border-color: var(--color-primary-light-100-alpha-300);
   }
   &:focus-within {
     background-color: var(--color-content-background);

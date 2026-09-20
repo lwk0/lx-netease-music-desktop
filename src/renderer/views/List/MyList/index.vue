@@ -367,9 +367,10 @@ export default {
     min-width: 0;
     height: 22px;
     padding: 0 8px 0 28px;
-    border: 1px solid transparent;
+    // 低调：与顶部/列表搜索框统一，去掉实心填充，改成极淡描边
+    border: 1px solid var(--color-primary-light-100-alpha-700);
     border-radius: 11px;
-    background-color: var(--color-button-background-hover);
+    background-color: transparent;
     color: var(--color-button-font);
     font-size: 12px;
     outline: none;
@@ -378,7 +379,7 @@ export default {
       color: var(--color-font-label);
     }
     &:hover {
-      border-color: var(--color-primary-background-hover);
+      border-color: var(--color-primary-light-100-alpha-300);
     }
     &:focus {
       background-color: var(--color-content-background);
