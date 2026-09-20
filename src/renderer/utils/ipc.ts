@@ -120,6 +120,32 @@ export const onUpdateNotAvailable = (listener: LX.IpcRendererEventListenerParams
   }
 }
 
+// APPX / MSIX：后台下载新版安装包并打开安装程序
+export const downloadAppxUpdate = () => {
+  rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.update_download_appx)
+}
+
+export const onAppxUpdateProgress = (listener: LX.IpcRendererEventListenerParams<{ percent: number }>): RemoveListener => {
+  rendererOn(WIN_MAIN_RENDERER_EVENT_NAME.update_appx_progress, listener)
+  return () => {
+    rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.update_appx_progress, listener)
+  }
+}
+
+export const onAppxUpdateDownloaded = (listener: LX.IpcRendererEventListenerParams<{ path: string, version: string }>): RemoveListener => {
+  rendererOn(WIN_MAIN_RENDERER_EVENT_NAME.update_appx_downloaded, listener)
+  return () => {
+    rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.update_appx_downloaded, listener)
+  }
+}
+
+export const onAppxUpdateError = (listener: LX.IpcRendererEventListenerParams<{ message: string }>): RemoveListener => {
+  rendererOn(WIN_MAIN_RENDERER_EVENT_NAME.update_appx_error, listener)
+  return () => {
+    rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.update_appx_error, listener)
+  }
+}
+
 
 export const importUserApi = async(fileText: string) => {
   return rendererInvoke<string, LX.UserApi.ImportUserApi>(WIN_MAIN_RENDERER_EVENT_NAME.import_user_api, fileText)

@@ -86,14 +86,6 @@ const router = createRouter({
         name: 'Setting',
       },
     },
-    {
-      path: '/netease/login',
-      name: 'NeteaseLogin',
-      component: require('./views/NeteaseLogin/index.vue').default,
-      meta: {
-        name: 'NeteaseLogin',
-      },
-    },
     { path: '/:pathMatch(.*)*', redirect: '/search' },
   ],
   linkActiveClass: 'active-link',

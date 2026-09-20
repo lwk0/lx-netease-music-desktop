@@ -69,6 +69,11 @@ const modules = {
     update_progress: 'update_progress',
     update_downloaded: 'update_downloaded',
     update_not_available: 'update_not_available',
+    // APPX / MSIX 专用：后台下载新版 APPX 安装包并启动安装程序
+    update_download_appx: 'update_download_appx',
+    update_appx_progress: 'update_appx_progress',
+    update_appx_downloaded: 'update_appx_downloaded',
+    update_appx_error: 'update_appx_error',
     set_ignore_mouse_events: 'set_ignore_mouse_events',
     set_window_size: 'set_window_size',
 
@@ -103,8 +108,7 @@ const modules = {
     get_sound_effect_convolution_preset: 'get_sound_effect_convolution_preset',
     save_sound_effect_convolution_preset: 'save_sound_effect_convolution_preset',
 
-    netease_web_login_start: 'netease_web_login_start',
-    netease_web_login_stop: 'netease_web_login_stop',
+    netease_open_login_window: 'netease_open_login_window',
     netease_web_clear_cookie: 'netease_web_clear_cookie',
     // get_sound_effect_pitch_shifter_preset: 'get_sound_effect_pitch_shifter_preset',
     // save_sound_effect_pitch_shifter_preset: 'save_sound_effect_pitch_shifter_preset',
