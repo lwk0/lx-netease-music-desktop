@@ -95,7 +95,7 @@
 
 ## 用户界面
 
-<p><img width="100%" src="./doc/images/app.png" alt="lx-music desktop UI"></p>
+<p><img width="100%" src="./doc/images/app.png" alt="LX-N Music 桌面版 UI"></p>
 
 ## 贡献代码
 

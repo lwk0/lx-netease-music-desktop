@@ -256,7 +256,7 @@ jobs:
       - name: Upload artifacts to Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.event.inputs.version != '' && github.event.inputs.version || 'v1.0.1' }}
+          RELEASE_TAG: ${{ github.event.inputs.version != '' && github.event.inputs.version || 'v1.0.2' }}
         run: |
           cd build
           gh release upload "$RELEASE_TAG" *.zip --clobber --repo lwk0/lx-netease-music-desktop
@@ -315,7 +315,7 @@ jobs:
       - name: Upload artifacts to Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.event.inputs.version != '' && github.event.inputs.version || 'v1.0.1' }}
+          RELEASE_TAG: ${{ github.event.inputs.version != '' && github.event.inputs.version || 'v1.0.2' }}
         run: |
           cd build
           gh release upload "$RELEASE_TAG" *.deb *.rpm *.pacman *.AppImage --clobber --repo lwk0/lx-netease-music-desktop
