@@ -114,8 +114,8 @@ export default {
         { id: 'SettingBackup', title: t('setting__backup') },
         { id: 'SettingOther', title: t('setting__other') },
         { id: 'SettingUpdate', title: t('setting__update') },
-        { id: 'SettingAbout', title: t('setting__about') },
         { id: 'SettingNetEase', title: t('setting__netease') },
+        { id: 'SettingAbout', title: t('setting__about') },
       ]
     })
 

@@ -7,8 +7,8 @@ import { setWyVipType } from '@renderer/store/user/action'
 // Simple in-memory UID cache
 const uidCache = new Map()
 const getWyUidCache = async(hashedCookie) => uidCache.get(hashedCookie)
-const saveWyUidCache = async(hashedCookie, uid, vipType) => {
-  uidCache.set(hashedCookie, { uid, vipType })
+const saveWyUidCache = async(hashedCookie, uid, vipType, profile) => {
+  uidCache.set(hashedCookie, { uid, vipType, profile })
 }
 
 export default {
@@ -57,6 +57,60 @@ export default {
         return this.getUid(cookie, retryNum + 1)
       } else {
         console.error('获取UID失败 (重试次数已达上限)', error)
+        throw error
+      }
+    }
+  },
+
+  // 获取账号资料（uid / 昵称 / 头像）。与 getUid 同一接口，额外返回 profile 供 UI 显示头像。
+  async getProfile(cookie, retryNum = 0) {
+    if (!cookie) throw new Error('Cookie is required to get profile')
+    const maxRetries = 3
+    const retryDelay = 200
+
+    try {
+      const hashedCookie = toMD5(cookie)
+      const cachedData = await getWyUidCache(hashedCookie)
+      if (cachedData?.profile) return cachedData.profile
+
+      const csrfToken = (cookie.match(/_csrf=([^(;|$)]+)/) || [])[1]
+      const request = httpFetch('https://music.163.com/weapi/nuser/account/get', {
+        method: 'post',
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54',
+          origin: 'https://music.163.com',
+          Referer: 'https://music.163.com',
+          cookie,
+        },
+        form: weapi({
+          csrf_token: csrfToken || '',
+        }),
+      })
+      const { body, statusCode } = await request.promise
+
+      if (statusCode !== 200 || body.code !== 200) throw new Error('获取账号资料失败')
+      if (!body.account) {
+        console.warn('登录已过期或Cookie无效')
+        throw new Error('登录已过期或Cookie无效')
+      }
+
+      const uid = String(body.account.id)
+      const profile = {
+        uid,
+        nickname: body.profile?.nickname || '',
+        avatarUrl: body.profile?.avatarUrl || '',
+        vipType: body.account.vipType || 0,
+      }
+      setWyVipType(body.account.vipType)
+      await saveWyUidCache(hashedCookie, uid, body.account.vipType, profile)
+      return profile
+    } catch (error) {
+      if (retryNum < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay))
+        return this.getProfile(cookie, retryNum + 1)
+      } else {
+        console.error('获取账号资料失败 (重试次数已达上限)', error)
         throw error
       }
     }

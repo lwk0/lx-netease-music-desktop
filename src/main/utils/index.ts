@@ -35,6 +35,19 @@ export const parseEnvParams = (argv = process.argv): { cmdParams: LX.CmdParams, 
 
 const primitiveType = ['string', 'boolean', 'number']
 const checkPrimitiveType = (val: any): boolean => val === null || primitiveType.includes(typeof val)
+
+// array / object 等引用类型的内容比较：用 JSON.stringify 判断值是否实际改变。
+// 仅对非 primitive 启用；primitive 走 `===` 即可（已有逻辑）。
+// 这样 array / object 类型字段（如 `common.wy_cookie_accounts`）也能正确合并并触发
+// `updated_config`，否则会被 `continue` 跳过，UI 与主进程两端永远拿不到新值。
+const isSameValue = (a: unknown, b: unknown): boolean => {
+  if (checkPrimitiveType(a) && checkPrimitiveType(b)) return a === b
+  try {
+    return JSON.stringify(a) === JSON.stringify(b)
+  } catch {
+    return false
+  }
+}
 // const handleMergeSetting = (defaultSetting: LX.AppSetting, currentSetting: Partial<LX.AppSetting>) => {
 //   const updatedSettingKeys: Array<keyof LX.AppSetting> = []
 //   for (const key of Object.keys(defaultSetting) as Array<keyof LX.AppSetting>) {
@@ -72,30 +85,20 @@ export const mergeSetting = (originSetting: LX.AppSetting, targetSetting?: Parti
     if (originSettingKeys.length > targetSettingKeys.length) {
       for (const key of targetSettingKeys as Array<keyof LX.AppSetting>) {
         const targetValue: any = targetSetting[key]
-        const isPrimitive = checkPrimitiveType(targetValue)
-        // if (checkPrimitiveType(value)) {
-        if (!isPrimitive || targetValue == originSettingCopy[key] || originSettingCopy[key] === undefined) continue
+        if (isSameValue(targetValue, originSettingCopy[key])) continue
         updatedSettingKeys.push(key)
         updatedSetting[key] = targetValue
         // @ts-expect-error
         originSettingCopy[key] = targetValue
-        // } else {
-        //   if (!isPrimitive && currentValue != undefined) handleMergeSetting(value, currentValue)
-        // }
       }
     } else {
       for (const key of originSettingKeys as Array<keyof LX.AppSetting>) {
         const targetValue: any = targetSetting[key]
-        const isPrimitive = checkPrimitiveType(targetValue)
-        // if (checkPrimitiveType(value)) {
-        if (!isPrimitive || targetValue == originSettingCopy[key]) continue
+        if (isSameValue(targetValue, originSettingCopy[key])) continue
         updatedSettingKeys.push(key)
         updatedSetting[key] = targetValue
         // @ts-expect-error
         originSettingCopy[key] = targetValue
-        // } else {
-        //   if (!isPrimitive && currentValue != undefined) handleMergeSetting(value, currentValue)
-        // }
       }
     }
   }
