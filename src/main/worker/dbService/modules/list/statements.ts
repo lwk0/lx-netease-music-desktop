@@ -183,4 +183,13 @@ export const createMusicInfoOrderDeleteStatement = () => {
   return db.prepare<[LX.DBService.MusicInfoRemove]>('DELETE FROM "main"."my_list_music_info_order" WHERE "musicInfoId"=@id AND "listId"=@listId')
 }
 
+/**
+ * 创建根据列表Id与音乐id查询音乐排序语句
+ * @returns 查询语句
+ */
+export const createMusicInfoOrderStatement = () => {
+  const db = getDB()
+  return db.prepare<[LX.DBService.MusicInfoOrder]>('SELECT * FROM "main"."my_list_music_info_order" WHERE "listId"=@listId AND "musicInfoId"=@musicInfoId')
+}
+
 

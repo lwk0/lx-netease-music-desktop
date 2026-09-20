@@ -40,7 +40,10 @@ module.exports = async newVerNum => {
     desc: version.desc,
   })
   version.version = newVerNum
-  version.desc = newMDChangeLog.replace(/(?:^|(\n))#{1,6} (.+)\n/g, '$1$2').trim()
+  // 兼容 CRLF 行尾（Windows 上编辑 changeLog.md 常见）：原正则 `(?:^|(\n))#{1,6} (.+)\n`
+  // 在 CRLF 下会失配——JS 的 `.` 不匹配 `\r`，导致 `(.+)` 吃掉 `\r` 后 `\n` 无法匹配，
+  // 结果 markdown 标题（###）不会被剥掉。这里显式允许 `\r?\n` 并统一换行符。
+  version.desc = newMDChangeLog.replace(/\r\n/g, '\n').replace(/(?:^|(\n))#{1,6} (.+)\n/g, '$1$2').trim()
   pkg.version = newVerNum
 
   console.log(chalk.blue('new version: ') + chalk.green(newVerNum))

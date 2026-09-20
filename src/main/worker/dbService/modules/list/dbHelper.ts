@@ -13,6 +13,7 @@ import {
   createMusicInfoOrderInsertStatement,
   createMusicInfoOrderDeleteStatement,
   createMusicInfoOrderDeleteByListIdStatement,
+  createMusicInfoOrderStatement,
   createMusicInfoClearStatement,
   createMusicInfoOrderClearStatement,
   createMusicInfoByListAndMusicInfoIdQueryStatement,
@@ -288,6 +289,17 @@ export const queryMusicInfoByListIdAndMusicInfoId = (listId: string, musicInfoId
 export const queryMusicInfoByMusicInfoId = (id: string) => {
   const musicInfoByMusicInfoIdQueryStatement = createMusicInfoByMusicInfoIdQueryStatement()
   return musicInfoByMusicInfoIdQueryStatement.all(id) as LX.DBService.MusicInfo[]
+}
+
+/**
+ * 获取列表内音乐的排序
+ * @param listId 列表id
+ * @param musicInfoId 音乐id
+ * @returns 音乐排序信息
+ */
+export const getMusicInfoOrder = (listId: string, musicInfoId: string) => {
+  const musicInfoOrderStatement = createMusicInfoOrderStatement()
+  return musicInfoOrderStatement.get({ listId, musicInfoId, order: 0 }) as LX.DBService.MusicInfoOrder | undefined
 }
 
 /**

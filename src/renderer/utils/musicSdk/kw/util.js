@@ -110,14 +110,14 @@ export const lrcTools = {
           prevWord.startTime = prevWord.endTime
         }
 
-        prevWord.newTimeStr = `<${prevWord.startTime},${prevWord.endTime - prevWord.startTime}>`
+        prevWord.newTimeStr = `<${prevWord.startTime},${Math.trunc(prevWord.endTime - prevWord.startTime)}>`
         // console.log(prevWord)
       }
     }
     return {
       startTime,
       endTime,
-      timeStr: `<${startTime},${endTime - startTime}>`,
+      timeStr: `<${startTime},${Math.trunc(endTime - startTime)}>`,
     }
   },
   parseLine(line) {

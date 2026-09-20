@@ -13,6 +13,7 @@ import {
   queryMusicInfoByListId,
   queryMusicInfoByListIdAndMusicInfoId,
   queryMusicInfoByMusicInfoId,
+  getMusicInfoOrder,
   removeMusicInfoByListId,
   removeMusicInfos,
   updateMusicInfoOrder,
@@ -257,10 +258,14 @@ export const musicsMove = (fromId: string, toId: string, musicInfos: LX.Music.Mu
       arrUnshift(toList, musicInfos)
       break
     case 'bottom':
-    default:
-      moveMusicInfo(fromId, ids, toDBMusicInfo(musicInfos, toId, toList.length))
+    default:{
+      // 如果是添加到最后，那么取最后一个歌曲的原始位置 + 1 作为新歌曲的原始位置，否则新歌曲的原始位置为 position
+      // 因为原始 pos 可能比 toList.length 大，所以不能直接用 toList.length 作为新歌曲的原始位置
+      const order = toList.length ? (getMusicInfoOrder(toId, toList.at(-1)!.id)?.order ?? toList.length) + 1 : 0
+      moveMusicInfo(fromId, ids, toDBMusicInfo(musicInfos, toId, order))
       arrPush(toList, musicInfos)
       break
+    }
   }
 
   listSet = new Set<string>(ids)
