@@ -60,7 +60,9 @@ body {
 #root {
   height: 100%;
   position: relative;
-  overflow: hidden;
+  // 用 clip 而非 hidden：两者裁剪效果一致，但 hidden 仍是可被脚本滚动的容器，
+  // 任意子元素调用 scrollIntoView 都会把整个应用界面上推（顶部元素被推出窗口）。
+  overflow: clip;
   color: var(--color-font);
   background: var(--background-image) var(--background-image-position) no-repeat;
   background-size: var(--background-image-size);

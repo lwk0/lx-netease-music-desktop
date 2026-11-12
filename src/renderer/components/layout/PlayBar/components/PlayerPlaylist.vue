@@ -43,6 +43,8 @@ export default {
     const dom_btn = ref(null)
     const dom_list = ref(null)
     const list = ref([])
+    // 记录「用户是否仍打算展开弹层」，用于异步加载列表期间判定是否取消展开
+    let wantShow = false
 
     const activeIndex = computed(() => {
       const currentId = playMusicInfo.musicInfo?.id
@@ -65,27 +67,48 @@ export default {
     }
 
     const scrollToActive = () => {
-      if (!dom_list.value || activeIndex.value < 0) return
-      const activeEl = dom_list.value.children[activeIndex.value]
-      if (activeEl) activeEl.scrollIntoView({ block: 'center', behavior: 'auto' })
+      const listEl = dom_list.value
+      if (!listEl || activeIndex.value < 0) return
+      const activeEl = listEl.children[activeIndex.value]
+      if (!activeEl) return
+      // 只调整列表容器自身的滚动位置。
+      // 不能用 scrollIntoView：它会连带滚动所有可滚动祖先（根容器、html/body 等），
+      // 把整个界面上推，使播放栏按钮离开光标并立刻触发 mouseleave 收起弹层，
+      // 形成「展开-上移-收起」来回跳动的死循环。
+      const listRect = listEl.getBoundingClientRect()
+      const itemRect = activeEl.getBoundingClientRect()
+      const delta = itemRect.top - listRect.top - (listEl.clientHeight - itemRect.height) / 2
+      listEl.scrollTop = Math.max(0, listEl.scrollTop + delta)
     }
 
     const handlePlay = (index) => {
       const listId = playInfo.playerListId
       if (!listId) return
+      wantShow = false
       visible.value = false
       playList(listId, index)
     }
 
     let timeout = null
+    const showPopup = async() => {
+      // 先加载并渲染列表，再展开弹层。base-popup 只在 visible 变化时按内容高度计算一次位置，
+      // 若展开后才异步填入列表，弹层会突然变高、错位甚至溢出窗口。
+      await loadList()
+      await nextTick()
+      if (!wantShow || visible.value) return
+      visible.value = true
+      void nextTick(scrollToActive)
+    }
     const handlMsEnter = () => {
       if (timeout) {
         clearTimeout(timeout)
         timeout = null
       }
       if (visible.value) return
+      wantShow = true
       timeout = setTimeout(() => {
-        visible.value = true
+        timeout = null
+        void showPopup()
       }, 100)
     }
     const handlMsLeave = () => {
@@ -93,6 +116,7 @@ export default {
         clearTimeout(timeout)
         timeout = null
       }
+      wantShow = false
       if (!visible.value) return
       timeout = setTimeout(() => {
         timeout = null
@@ -109,15 +133,6 @@ export default {
     }
 
     watch(() => playInfo.playerListId, loadList, { immediate: true })
-
-    watch(() => visible.value, (v) => {
-      if (!v) return
-      void loadList().then(() => {
-        void nextTick(() => {
-          scrollToActive()
-        })
-      })
-    })
 
     return {
       visible,
