@@ -86,3 +86,6 @@ _tmp_*.js
 
 # Visual Studio / IDE caches
 .vs/
+
+# AI Agents
+.workbuddy/

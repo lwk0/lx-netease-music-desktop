@@ -6,6 +6,18 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.5](https://github.com/lwk0/lx-netease-music-desktop/compare/v1.0.2...v1.0.5) - 2026-11-12
+
+### 修复
+
+- 修复鼠标悬停在播放栏右下角播放列表按钮时，整个界面上下跳动、顶部内容被推出窗口、播放列表只能瞬间展开无法正常查看的问题
+- 修复播放列表展开后才异步加载队列，导致弹层高度突变、位置错位甚至溢出窗口的问题（改为先加载并渲染队列再展开）
+
+### 优化
+
+- 播放列表定位当前播放歌曲改为只滚动列表自身，不再连带滚动外层页面
+- 应用根容器改用 `overflow: clip` 裁剪，避免同类滚动副作用把整个界面推离窗口
+
 ## [1.0.2](https://github.com/lwk0/lx-netease-music-desktop/compare/v1.0.1...v1.0.2) - 2026-09-20
 
 ### 新增
